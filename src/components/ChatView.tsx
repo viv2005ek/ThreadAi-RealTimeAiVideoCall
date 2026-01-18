@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, Mic, MicOff, Settings } from 'lucide-react';
+import { Paperclip } from 'lucide-react';
+
 import { 
   Message, 
   ConversationSettings, 
@@ -60,6 +62,9 @@ declare global {
 }
 
 export default function ChatView({ conversationId }: ChatViewProps) {
+  const [attachments, setAttachments] = useState<File[]>([]);
+const [attachmentContext, setAttachmentContext] = useState<string>(''); 
+const [isProcessingAttachments, setIsProcessingAttachments] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [videoState, setVideoState] = useState<VideoState>('idle');
@@ -207,7 +212,15 @@ export default function ChatView({ conversationId }: ChatViewProps) {
         createdAt: new Date()
       });
 
-      const responseText = await generateAIResponse(userMessage, currentSettings, conversationHistory);
+const enhancedUserMessage = attachmentContext
+  ? `Attached content context:\n${attachmentContext}\n\nUser query:\n${userMessage}`
+  : userMessage;
+
+const responseText = await generateAIResponse(
+  enhancedUserMessage,
+  currentSettings,
+  conversationHistory
+);
 
       if (currentConversationRef.current !== targetConversationId) {
         return;
@@ -254,6 +267,8 @@ export default function ChatView({ conversationId }: ChatViewProps) {
       if (currentConversationRef.current !== targetConversationId) {
         return;
       }
+setAttachments([]);
+setAttachmentContext('');
 
       setTranscriptMessages((prev) => [...prev,
         { conversationId: targetConversationId, sender: 'user', text: userMessage, createdAt: new Date() },
@@ -359,6 +374,149 @@ export default function ChatView({ conversationId }: ChatViewProps) {
       }
     }
   }
+  function removeAttachment(index: number) {
+  setAttachments(prev => prev.filter((_, i) => i !== index));
+
+  setAttachmentContext(prev => {
+    // Conservative: wipe all context if user removes any file
+    // (simplest + safest)
+    return '';
+  });
+}
+
+async function handleAttachmentSelect(
+  e: React.ChangeEvent<HTMLInputElement>
+) {
+  const files = Array.from(e.target.files || []);
+
+  if (files.length === 0) return;
+
+  if (files.length + attachments.length > 5) {
+    alert('You can upload a maximum of 5 attachments.');
+    return;
+  }
+
+  for (const file of files) {
+    if (file.size > 5 * 1024 * 1024) {
+      alert(`${file.name} exceeds 5MB limit`);
+      return;
+    }
+  }
+
+  setAttachments(prev => [...prev, ...files]);
+
+  await processAttachments(files);
+
+  e.target.value = '';
+}
+async function processAttachments(files: File[]) {
+  setIsProcessingAttachments(true);
+
+  try {
+    const extractedResults: string[] = [];
+
+    for (const file of files) {
+      const base64 = await fileToBase64(file);
+
+      const result = await extractAttachmentWithGemini(
+        file.type,
+        base64
+      );
+
+    console.log(`📎 Extracted from ${file.name} (length=${result.length})`);
+console.log(result);
+
+
+      extractedResults.push(result);
+    }
+
+    const combinedContext = extractedResults.join('\n\n');
+
+    setAttachmentContext(prev =>
+      prev
+        ? `${prev}\n\n${combinedContext}`
+        : combinedContext
+    );
+
+  } catch (err) {
+    console.error('Attachment extraction failed:', err);
+  } finally {
+    setIsProcessingAttachments(false);
+  }
+}
+
+async function extractAttachmentWithGemini(
+  mimeType: string,
+  base64Data: string
+): Promise<string> {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+ 
+
+ const body = {
+  contents: [
+    {
+      parts: [
+        {
+          text: `
+You are a document analysis and information extraction assistant.
+
+TASK:
+Extract ALL meaningful information from the attached file.
+
+RULES:
+- Do NOT summarize unless explicitly asked
+- Preserve structure where possible
+- Extract names, roles, organizations, timelines, facts, bullet points, tables (as text)
+- If the document contains multiple sections or profiles, extract EACH ONE fully
+- Be exhaustive and detailed
+- Do NOT stop early
+- Do NOT omit content for brevity
+`
+        },
+        {
+          inlineData: {
+            mimeType,
+            data: base64Data
+          }
+        }
+      ]
+    }
+  ],
+  generationConfig: {
+    temperature: 0.2,
+    topK: 32,
+    topP: 0.9,
+    maxOutputTokens: 4096   // 🔴 THIS IS THE BIG FIX
+  }
+};
+
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }
+  );
+
+  const data = await res.json();
+
+  return (
+    data.candidates?.[0]?.content?.parts?.[0]?.text ||
+    'No extractable content found.'
+  );
+}
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () =>
+      resolve((reader.result as string).split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
   function sanitizeSettings(settings: ConversationSettings): ConversationSettings {
     const cleaned = { ...settings };
@@ -486,20 +644,72 @@ export default function ChatView({ conversationId }: ChatViewProps) {
               >
                 {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
               </button>
+<input
+  id="attachment-input"
+  type="file"
+  multiple
+  accept="image/*,application/pdf,video/*,audio/*"
+  hidden
+  onChange={handleAttachmentSelect}
+/>
+{attachments.length > 0 && (
+  <div className="mb-2 flex flex-wrap gap-2">
+    {attachments.map((file, index) => (
+      <div
+        key={index}
+        className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 border border-gray-200 rounded-full text-xs"
+      >
+        <span className="truncate max-w-[120px]">
+          {file.name}
+        </span>
+
+        {isProcessingAttachments && (
+          <span className="text-gray-400">processing…</span>
+        )}
+
+        <button
+          onClick={() => removeAttachment(index)}
+          className="text-gray-400 hover:text-red-500"
+        >
+          ✕
+        </button>
+      </div>
+    ))}
+  </div>
+)}
 
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={isListening ? 'Listening...' : 'Or type your message...'}
+placeholder={
+  isListening
+    ? 'Listening...'
+    : attachments.length > 0
+    ? `Message (${attachments.length} attachment${attachments.length > 1 ? 's' : ''})`
+    : 'Or type your message...'
+}
                 disabled={isBusy || isListening}
                 className="flex-1 px-4 py-3 bg-transparent text-gray-900 placeholder-gray-400 focus:outline-none disabled:opacity-50"
               />
+<button
+  onClick={() => document.getElementById('attachment-input')?.click()}
+  disabled={isBusy || isProcessingAttachments}
+  className="p-3 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50"
+  title="Add attachment"
+>
+  <Paperclip className="w-5 h-5" />
+</button>
 
               <button
                 onClick={handleSend}
-                disabled={!input.trim() || isBusy || isListening}
+disabled={
+  !input.trim() ||
+  isBusy ||
+  isListening ||
+  isProcessingAttachments
+}
                 className="flex-shrink-0 p-4 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send className="w-5 h-5" />

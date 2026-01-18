@@ -164,7 +164,7 @@ console.log(`Final text length after processing: ${finalText.length} characters`
 
     // ---- Split text into chunks ----
 const words = finalText.split(' ');
-const chunkSize = language === 'hi' ? 18 : 22; // Slightly smaller chunks for Hindi
+const chunkSize = language === 'hi' ? 25 : 25; // Slightly smaller chunks for Hindi
     const chunks = [];
     
     for (let i = 0; i < words.length; i += chunkSize) {

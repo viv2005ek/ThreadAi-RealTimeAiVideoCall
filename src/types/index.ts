@@ -219,7 +219,7 @@ Used for onboarding, feature explanations, announcements, and system-level guida
 Represents the product’s vision and technical understanding.
 `,
 avatarMediaUrl: 'https://cdn.jsdelivr.net/gh/viv2005ek/fantu-avatars@master/movs/CreatorMov.mov',
-  previewImageUrl: 'https://cdn.jsdelivr.net/gh/viv2005ek/fantu-avatars@master/images/CreatorPhoto.jpeg',
+  previewImageUrl: 'https://cdn.jsdelivr.net/gh/viv2005ek/fantu-avatars@master/images/CreatorImage.jpeg',
   type: 'professional',
   defaultGender: 'male',
   defaultTone: 'Mentor',

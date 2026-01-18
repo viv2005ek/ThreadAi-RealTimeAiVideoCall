@@ -1,3 +1,6 @@
+/* eslint-disable no-empty */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ConversationSettings, Message } from '../types';
 
 const GEMINI_MODELS = [
@@ -135,18 +138,18 @@ async function listAvailableModels(apiKey: string): Promise<void> {
   if (modelsListed) return;
   
   try {
-    console.log('🔍 Checking available Gemini models...');
+    // console.log('🔍 Checking available Gemini models...');
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
     if (response.ok) {
       const data = await response.json();
-      console.log('✅ Available Gemini models:');
+      // console.log('✅ Available Gemini models:');
       if (data.models) {
         // Filter to only show models that support generateContent
         const generateModels = data.models.filter((m: any) => 
           m.supportedGenerationMethods?.includes('generateContent')
         );
         generateModels.forEach((model: any) => {
-          console.log(`- ${model.name.replace('models/', '')}`);
+          // console.log(`- ${model.name.replace('models/', '')}`);
         });
       }
     }
@@ -306,6 +309,8 @@ export async function generateAIResponse(
 
       console.log(`✅ Success with selected model: ${selectedModel}`);
       console.log(`📏 Response length: ${text.length} characters`);
+            console.log(`📏 Response : ${text} `);
+
       
       // For Hindi responses, ensure proper sentence endings
       if (isHindi) {
@@ -337,7 +342,7 @@ export async function generateMockAIResponse(
     language: 'en',
     avatarId: 'default-ai',
     selectedGeminiModel: 'gemini-2.5-flash',
-    avatarImageUrl: undefined
+
   });
 
   return { text };
