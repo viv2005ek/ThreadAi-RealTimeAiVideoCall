@@ -1,6 +1,6 @@
-import { Video, Plus, LogOut, MessageSquare, Trash2, Loader2, Building2 } from 'lucide-react';
+import { Video, Plus, LogOut, MessageSquare, Trash2, Loader2, Building2, Edit2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { deleteConversation } from '../services/firestore';
+import { deleteConversation, updateConversationTitle, updateCompanyName } from '../services/firestore';
 import { Conversation, Company } from '../types';
 
 interface SidebarProps {
@@ -40,6 +40,34 @@ export default function Sidebar({
       }
     } catch (error) {
       console.error('Failed to delete conversation:', error);
+    }
+  }
+
+  async function handleRenameConversation(e: React.MouseEvent, convId: string, currentTitle: string) {
+    e.stopPropagation();
+
+    const newTitle = prompt('Enter new name:', currentTitle);
+    if (newTitle && newTitle.trim() !== currentTitle) {
+      try {
+        await updateConversationTitle(convId, newTitle.trim());
+      } catch (error) {
+        console.error('Failed to rename conversation:', error);
+        alert('Failed to rename conversation');
+      }
+    }
+  }
+
+  async function handleRenameCompany(e: React.MouseEvent, companyId: string, currentName: string) {
+    e.stopPropagation();
+
+    const newName = prompt('Enter new company name:', currentName);
+    if (newName && newName.trim() !== currentName) {
+      try {
+        await updateCompanyName(companyId, newName.trim());
+      } catch (error) {
+        console.error('Failed to rename company:', error);
+        alert('Failed to rename company');
+      }
     }
   }
 
@@ -115,12 +143,22 @@ export default function Sidebar({
                 >
                   <MessageSquare className="w-4 h-4 flex-shrink-0" />
                   <span className="flex-1 truncate text-sm">{conv.title}</span>
-                  <button
-                    onClick={(e) => handleDelete(e, conv.id)}
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-300 rounded transition-all"
-                  >
-                    <Trash2 className="w-3.5 h-3.5 text-gray-500" />
-                  </button>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                    <button
+                      onClick={(e) => handleRenameConversation(e, conv.id, conv.title)}
+                      className="p-1 hover:bg-gray-300 rounded"
+                      title="Rename"
+                    >
+                      <Edit2 className="w-3.5 h-3.5 text-gray-500" />
+                    </button>
+                    <button
+                      onClick={(e) => handleDelete(e, conv.id)}
+                      className="p-1 hover:bg-gray-300 rounded"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-gray-500" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -153,6 +191,13 @@ export default function Sidebar({
                 >
                   <Building2 className="w-4 h-4 flex-shrink-0" />
                   <span className="flex-1 truncate text-sm">{company.name}</span>
+                  <button
+                    onClick={(e) => handleRenameCompany(e, company.id!, company.name)}
+                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-300 rounded transition-all"
+                    title="Rename"
+                  >
+                    <Edit2 className="w-3.5 h-3.5 text-gray-500" />
+                  </button>
                 </div>
               ))}
             </div>

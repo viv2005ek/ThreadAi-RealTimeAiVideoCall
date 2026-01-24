@@ -99,6 +99,11 @@ export async function updateConversationSettings(
   await updateDoc(docRef, { settings });
 }
 
+export async function updateConversationTitle(conversationId: string, newTitle: string): Promise<void> {
+  const docRef = doc(db, 'conversations', conversationId);
+  await updateDoc(docRef, { title: newTitle });
+}
+
 export async function deleteConversation(conversationId: string): Promise<void> {
   const messagesRef = collection(db, 'messages');
   const q = query(messagesRef, where('conversationId', '==', conversationId));
@@ -194,6 +199,11 @@ export async function updateCompanySettings(
 ): Promise<void> {
   const companyRef = doc(db, 'companies', companyId);
   await updateDoc(companyRef, { settings });
+}
+
+export async function updateCompanyName(companyId: string, newName: string): Promise<void> {
+  const companyRef = doc(db, 'companies', companyId);
+  await updateDoc(companyRef, { name: newName });
 }
 
 export async function addCompanyDocument(document: Omit<CompanyDocument, 'id'>): Promise<string> {

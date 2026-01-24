@@ -265,7 +265,7 @@ export default function VideoPlayer({
             {/* Main video player */}
             <video
               ref={mainVideoRef}
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-contain"
               playsInline
               muted={false}
               onEnded={handleVideoEnded}
@@ -298,7 +298,7 @@ export default function VideoPlayer({
                 <img
                   src={displayAvatar}
                   alt="AI Avatar"
-                  className={`w-full h-full object-cover transition-transform duration-200 ${
+                  className={`w-full h-full object-contain transition-transform duration-200 ${
                     state === 'speaking' ? 'avatar-speaking' : ''
                   }`}
                 />

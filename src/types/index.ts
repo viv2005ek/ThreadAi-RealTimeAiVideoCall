@@ -317,7 +317,7 @@ export const DEFAULT_CONVERSATION_SETTINGS: ConversationSettings = {
   personality: 'A helpful and knowledgeable AI assistant',
   tone: 'Professional',
   responseLength: 'Normal',
-  avatarVoiceGender: 'female',
+  avatarVoiceGender: 'male',
   language: 'en',
   avatarId: 'default-ai',
   selectedGeminiModel: 'gemini-2.5-flash',
