@@ -25,7 +25,7 @@ export default function Dashboard() {
       setConversations(convs);
     });
 
-    const unsubscribeCompanies = subscribeToUserCompanies(currentUser.uid, (comps) => {
+    const unsubscribeCompanies = subscribeToUserCompanies(currentUser.email || currentUser.uid, (comps) => {
       setCompanies(comps);
     });
 
@@ -59,7 +59,7 @@ export default function Dashboard() {
 
     setCreatingCompany(true);
     try {
-      const newId = await createCompany(currentUser.uid, companyName);
+      const newId = await createCompany(currentUser.email || currentUser.uid, companyName);
       setActiveCompanyId(newId);
       setActiveConversationId(null);
     } catch (error) {

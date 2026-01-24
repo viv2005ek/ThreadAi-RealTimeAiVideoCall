@@ -150,26 +150,26 @@ export function subscribeToMessages(
   });
 }
 
-export async function createCompany(userId: string, name: string): Promise<string> {
+export async function createCompany(userEmail: string, name: string): Promise<string> {
   const companiesRef = collection(db, 'companies');
   const docRef = await addDoc(companiesRef, {
     name,
-    createdBy: userId,
+    createdBy: userEmail,
     createdAt: Timestamp.now(),
-    members: [userId],
+    members: [userEmail],
     settings: DEFAULT_CONVERSATION_SETTINGS
   });
   return docRef.id;
 }
 
 export function subscribeToUserCompanies(
-  userId: string,
+  userEmailOrId: string,
   callback: (companies: Company[]) => void
 ): () => void {
   const companiesRef = collection(db, 'companies');
   const q = query(
     companiesRef,
-    where('members', 'array-contains', userId)
+    where('members', 'array-contains', userEmailOrId)
   );
 
   return onSnapshot(q, (snapshot) => {
