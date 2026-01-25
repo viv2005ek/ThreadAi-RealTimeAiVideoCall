@@ -78,6 +78,7 @@ export default function ChatView({ conversationId }: ChatViewProps) {
   const [settings, setSettings] = useState<ConversationSettings>(DEFAULT_CONVERSATION_SETTINGS);
   const [transcriptMessages, setTranscriptMessages] = useState<Message[]>([]);
   const [gooeyResponse, setGooeyResponse] = useState<GooeyVideoResponse | null>(null);
+  const [transcriptHeight, setTranscriptHeight] = useState(40);
 
   const currentConversationRef = useRef<string>(conversationId);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -516,22 +517,26 @@ export default function ChatView({ conversationId }: ChatViewProps) {
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-shrink-0 p-6 pb-4">
-          <div className="max-w-2xl mx-auto">
-            <VideoPlayer
-              state={videoState}
-              avatarImageUrl={settings.avatarPreviewImageUrl}
-              speakingVideoUrl={currentVideoUrl}
-              speakingVideoUrls={gooeyResponse?.videoUrls}
-              caption={currentCaption}
-              onVideoEnded={handleVideoEnded}
-            />
+        <div className="flex-shrink-0 p-6 pb-4" style={{ height: `${100 - transcriptHeight}%` }}>
+          <div className="max-w-2xl mx-auto h-full flex items-center">
+            <div className="w-full">
+              <VideoPlayer
+                state={videoState}
+                avatarImageUrl={settings.avatarPreviewImageUrl}
+                speakingVideoUrl={currentVideoUrl}
+                speakingVideoUrls={gooeyResponse?.videoUrls}
+                caption={currentCaption}
+                onVideoEnded={handleVideoEnded}
+              />
+            </div>
           </div>
         </div>
 
         <TranscriptView
           messages={transcriptMessages}
           onPlayMessage={handlePlayMessage}
+          transcriptHeight={transcriptHeight}
+          onHeightChange={setTranscriptHeight}
         />
 
         <MessageInput
