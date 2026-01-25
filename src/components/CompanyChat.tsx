@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from 'react';
-import { Upload, Mail, X } from 'lucide-react';
+import { Upload, Mail, X, Trash2 } from 'lucide-react';
 
 import {
   Message,
@@ -13,6 +13,8 @@ import { generateAIResponse } from '../services/mockAI';
 import { generateAvatarVideo, GooeyVideoResponse } from '../services/gooey';
 import { speakText, stopSpeaking } from '../services/tts';
 import { queryDocuments, upsertDocuments } from '../services/pinecone';
+import { getCompanyMembers, addCompanyMember as addMemberToSupabase, removeCompanyMember, ensureCompanyExists, CompanyMember } from '../services/companyService';
+import { useAuth } from '../contexts/AuthContext';
 import AvatarSettingsPanel from './AvatarSettingsPanel';
 import VideoPlayer, { VideoState } from './VideoPlayer';
 import ChatHeader from './ChatHeader';
@@ -24,6 +26,7 @@ interface CompanyChatProps {
 }
 
 export default function CompanyChat({ companyId }: CompanyChatProps) {
+  const { currentUser } = useAuth();
   const [attachments, setAttachments] = useState<File[]>([]);
   const [attachmentContext, setAttachmentContext] = useState<string>('');
   const [isProcessingAttachments, setIsProcessingAttachments] = useState(false);
@@ -39,6 +42,7 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
   const [settings, setSettings] = useState<ConversationSettings>(DEFAULT_CONVERSATION_SETTINGS);
   const [gooeyResponse, setGooeyResponse] = useState<GooeyVideoResponse | null>(null);
   const [companyDocuments, setCompanyDocuments] = useState<CompanyDocument[]>([]);
+  const [companyMembers, setCompanyMembers] = useState<CompanyMember[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [documentTitle, setDocumentTitle] = useState('');
   const [documentContent, setDocumentContent] = useState('');
@@ -65,6 +69,11 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
 
     const unsubscribeDocs = subscribeToCompanyDocuments(companyId, setCompanyDocuments);
 
+    if (currentUser?.email) {
+      ensureCompanyExists(companyId, `Company ${companyId}`, currentUser.email).catch(console.error);
+      loadCompanyMembers();
+    }
+
     return () => {
       unsubscribeMessages();
       unsubscribeCompany();
@@ -72,6 +81,15 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
       stopSpeaking();
     };
   }, [companyId]);
+
+  async function loadCompanyMembers() {
+    try {
+      const members = await getCompanyMembers(companyId);
+      setCompanyMembers(members);
+    } catch (error) {
+      console.error('Failed to load company members:', error);
+    }
+  }
 
   const handleSendWithText = useCallback(async (text: string) => {
     if (!text.trim() || videoState === 'thinking' || videoState === 'speaking') return;
@@ -289,14 +307,32 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
       return;
     }
 
+    if (!currentUser?.email) {
+      alert('You must be logged in to add members');
+      return;
+    }
+
     try {
+      await addMemberToSupabase(companyId, email, currentUser.email);
       await addCompanyMember(companyId, email);
       setInviteEmail('');
-      setShowInviteModal(false);
+      await loadCompanyMembers();
       alert(`${email} has been added to the company`);
     } catch (error) {
       console.error('Failed to add member:', error);
       alert('Failed to add member');
+    }
+  }
+
+  async function handleRemoveMember(memberId: string) {
+    if (!confirm('Are you sure you want to remove this member?')) return;
+
+    try {
+      await removeCompanyMember(memberId);
+      await loadCompanyMembers();
+    } catch (error) {
+      console.error('Failed to remove member:', error);
+      alert('Failed to remove member');
     }
   }
 
@@ -349,39 +385,26 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
         onSettingsClick={() => setShowSettings(true)}
         onInviteClick={() => setShowInviteModal(true)}
         showInviteButton={true}
+        onRagClick={() => setShowDocumentUpload(true)}
+        showRagButton={true}
+        documentCount={companyDocuments.length}
       />
 
-      <div className="px-3 sm:px-4 md:px-6 py-2 bg-white border-b border-gray-200 flex-shrink-0">
-        <button
-          onClick={() => setShowDocumentUpload(true)}
-          className="flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-gradient-to-r from-gray-100 to-gray-50 rounded-xl hover:from-gray-200 hover:to-gray-100 transition-all duration-300 hover:scale-105 shadow-sm hover:shadow-md"
-        >
-          <Upload className="w-3 h-3 sm:w-4 sm:h-4" />
-          <span className="hidden sm:inline">Add Data (RAG)</span>
-          <span className="sm:hidden">Add Data</span>
-        </button>
-        {companyDocuments.length > 0 && (
-          <p className="text-xs text-gray-500 mt-1.5 ml-1">{companyDocuments.length} document(s) uploaded</p>
-        )}
-      </div>
-
       <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-        <div className="flex-1 p-3 sm:p-4 md:p-6 pb-2 md:pb-4 overflow-auto min-h-0">
-          <div className="max-w-full md:max-w-2xl mx-auto h-full flex items-center justify-center">
-            <div className="w-full px-2 sm:px-0">
-              <VideoPlayer
-                state={videoState}
-                avatarImageUrl={settings.avatarPreviewImageUrl}
-                speakingVideoUrl={currentVideoUrl}
-                speakingVideoUrls={gooeyResponse?.videoUrls}
-                caption={currentCaption}
-                onVideoEnded={handleVideoEnded}
-              />
-            </div>
+        <div className="flex-shrink-0 p-2 sm:p-3 overflow-hidden">
+          <div className="max-w-full md:max-w-xl mx-auto">
+            <VideoPlayer
+              state={videoState}
+              avatarImageUrl={settings.avatarPreviewImageUrl}
+              speakingVideoUrl={currentVideoUrl}
+              speakingVideoUrls={gooeyResponse?.videoUrls}
+              caption={currentCaption}
+              onVideoEnded={handleVideoEnded}
+            />
           </div>
         </div>
 
-        <div className="flex-shrink-0 overflow-hidden" style={{ maxHeight: '40vh' }}>
+        <div className="flex-shrink-0 overflow-hidden" style={{ maxHeight: '28vh' }}>
           <TranscriptView
             messages={messages}
             onPlayMessage={handlePlayMessage}
@@ -390,7 +413,7 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
           />
         </div>
 
-        <div className="flex-shrink-0 border-t border-gray-200">
+        <div className="flex-shrink-0">
           <MessageInput
             input={input}
             onInputChange={setInput}
@@ -420,9 +443,9 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
       {showInviteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-scale-in">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowInviteModal(false)} />
-          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 sm:p-8 animate-slide-up">
+          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 sm:p-8 animate-slide-up max-h-[90vh] overflow-y-auto scrollbar-thin">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Add Team Member</h3>
+              <h3 className="text-xl font-bold text-gray-900">Team Members</h3>
               <button
                 onClick={() => setShowInviteModal(false)}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -432,24 +455,57 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
             </div>
             <div className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                <input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
-                  placeholder="colleague@company.com"
-                  className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Add New Member</label>
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
+                    placeholder="colleague@company.com"
+                    className="flex-1 px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                  />
+                  <button
+                    onClick={handleInvite}
+                    disabled={!inviteEmail.trim()}
+                    className="px-4 py-3.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium"
+                  >
+                    <Mail className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={handleInvite}
-                disabled={!inviteEmail.trim()}
-                className="w-full py-3.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:scale-105 ripple font-medium"
-              >
-                <Mail className="w-4 h-4" />
-                Add Member
-              </button>
+              {companyMembers.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">Current Members</label>
+                  <div className="space-y-2 max-h-64 overflow-y-auto scrollbar-thin">
+                    {companyMembers.map((member) => (
+                      <div
+                        key={member.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {member.email}
+                            {member.email === currentUser?.email && (
+                              <span className="ml-2 text-xs text-gray-500">(you)</span>
+                            )}
+                          </p>
+                          <p className="text-xs text-gray-500 capitalize">{member.role}</p>
+                        </div>
+                        {member.role !== 'owner' && (
+                          <button
+                            onClick={() => handleRemoveMember(member.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Remove member"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

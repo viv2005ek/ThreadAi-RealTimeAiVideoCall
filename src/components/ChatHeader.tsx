@@ -1,4 +1,4 @@
-import { Settings } from 'lucide-react';
+import { Settings, Upload } from 'lucide-react';
 import { ConversationSettings } from '../types';
 
 interface ChatHeaderProps {
@@ -6,13 +6,19 @@ interface ChatHeaderProps {
   onSettingsClick: () => void;
   onInviteClick?: () => void;
   showInviteButton?: boolean;
+  onRagClick?: () => void;
+  showRagButton?: boolean;
+  documentCount?: number;
 }
 
 export default function ChatHeader({
   settings,
   onSettingsClick,
   onInviteClick,
-  showInviteButton = false
+  showInviteButton = false,
+  onRagClick,
+  showRagButton = false,
+  documentCount = 0
 }: ChatHeaderProps) {
   return (
     <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200">
@@ -24,10 +30,25 @@ export default function ChatHeader({
         )}
       </div>
       <div className="flex items-center gap-2">
+        {showRagButton && onRagClick && (
+          <button
+            onClick={onRagClick}
+            className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
+          >
+            <Upload className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Add to RAG</span>
+            <span className="sm:hidden">RAG</span>
+            {documentCount > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 text-xs bg-gray-900 text-white rounded-full">
+                {documentCount}
+              </span>
+            )}
+          </button>
+        )}
         {showInviteButton && onInviteClick && (
           <button
             onClick={onInviteClick}
-            className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors"
+            className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors"
           >
             Add People
           </button>
