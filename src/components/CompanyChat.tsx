@@ -13,7 +13,7 @@ import { generateAIResponse } from '../services/mockAI';
 import { generateAvatarVideo, GooeyVideoResponse } from '../services/gooey';
 import { speakText, stopSpeaking } from '../services/tts';
 import { queryDocuments, upsertDocuments } from '../services/pinecone';
-import { getCompanyMembers, addCompanyMember as addMemberToSupabase, removeCompanyMember, ensureCompanyExists, CompanyMember } from '../services/companyService';
+import { subscribeToCompanyMembers, addCompanyMemberToFirestore, removeCompanyMember, ensureCompanyOwner, CompanyMember } from '../services/companyMembers';
 import { useAuth } from '../contexts/AuthContext';
 import AvatarSettingsPanel from './AvatarSettingsPanel';
 import VideoPlayer, { VideoState } from './VideoPlayer';
@@ -69,27 +69,20 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
 
     const unsubscribeDocs = subscribeToCompanyDocuments(companyId, setCompanyDocuments);
 
+    const unsubscribeMembers = subscribeToCompanyMembers(companyId, setCompanyMembers);
+
     if (currentUser?.email) {
-      ensureCompanyExists(companyId, `Company ${companyId}`, currentUser.email).catch(console.error);
-      loadCompanyMembers();
+      ensureCompanyOwner(companyId, currentUser.email).catch(console.error);
     }
 
     return () => {
       unsubscribeMessages();
       unsubscribeCompany();
       unsubscribeDocs();
+      unsubscribeMembers();
       stopSpeaking();
     };
-  }, [companyId]);
-
-  async function loadCompanyMembers() {
-    try {
-      const members = await getCompanyMembers(companyId);
-      setCompanyMembers(members);
-    } catch (error) {
-      console.error('Failed to load company members:', error);
-    }
-  }
+  }, [companyId, currentUser?.email]);
 
   const handleSendWithText = useCallback(async (text: string) => {
     if (!text.trim() || videoState === 'thinking' || videoState === 'speaking') return;
@@ -313,10 +306,9 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
     }
 
     try {
-      await addMemberToSupabase(companyId, email, currentUser.email);
+      await addCompanyMemberToFirestore(companyId, email, 'member', currentUser.email);
       await addCompanyMember(companyId, email);
       setInviteEmail('');
-      await loadCompanyMembers();
       alert(`${email} has been added to the company`);
     } catch (error) {
       console.error('Failed to add member:', error);
@@ -329,7 +321,6 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
 
     try {
       await removeCompanyMember(memberId);
-      await loadCompanyMembers();
     } catch (error) {
       console.error('Failed to remove member:', error);
       alert('Failed to remove member');
