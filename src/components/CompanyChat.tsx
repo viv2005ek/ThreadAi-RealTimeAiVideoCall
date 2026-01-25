@@ -381,7 +381,7 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
         documentCount={companyDocuments.length}
       />
 
-      <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+      <div className="flex-1 flex flex-col overflow-hidden min-h-0 relative">
         <div className="flex-shrink-0 p-2 sm:p-3 overflow-hidden">
           <div className="max-w-full md:max-w-xl mx-auto">
             <VideoPlayer
@@ -395,16 +395,23 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
           </div>
         </div>
 
-        <div className="flex-shrink-0 overflow-hidden" style={{ maxHeight: '28vh' }}>
+        <div
+          className="relative overflow-hidden"
+          style={{
+            flex: `0 0 ${transcriptHeight}%`,
+            minHeight: '200px',
+            maxHeight: '70vh'
+          }}
+        >
           <TranscriptView
             messages={messages}
             onPlayMessage={handlePlayMessage}
-            transcriptHeight={transcriptHeight}
+            transcriptHeight={100}
             onHeightChange={setTranscriptHeight}
           />
         </div>
 
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 relative z-10 bg-gradient-to-br from-gray-50 via-white to-gray-50">
           <MessageInput
             input={input}
             onInputChange={setInput}
