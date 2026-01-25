@@ -12,7 +12,6 @@ import { subscribeToMessages, addMessage, subscribeToCompany, updateCompanySetti
 import { generateAIResponse } from '../services/mockAI';
 import { generateAvatarVideo, GooeyVideoResponse } from '../services/gooey';
 import { speakText, stopSpeaking } from '../services/tts';
-import { queryDocuments, upsertDocuments } from '../services/pinecone';
 import { subscribeToCompanyMembers, addCompanyMemberToFirestore, removeCompanyMember, ensureCompanyOwner, CompanyMember } from '../services/companyMembers';
 import { useAuth } from '../contexts/AuthContext';
 import AvatarSettingsPanel from './AvatarSettingsPanel';
@@ -104,16 +103,18 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
       });
 
       let documentContext = '';
-      try {
-        const relevantDocs = await queryDocuments(companyId, userMessage, 3);
+      if (companyDocuments.length > 0) {
+        const relevantDocs = companyDocuments.filter(doc => {
+          const searchTerms = userMessage.toLowerCase().split(' ');
+          const docText = `${doc.title} ${doc.content}`.toLowerCase();
+          return searchTerms.some(term => term.length > 3 && docText.includes(term));
+        }).slice(0, 3);
+
         if (relevantDocs.length > 0) {
-          documentContext = `\n\nRelevant Company Documents (from vector search):\n${relevantDocs.map((doc, i) =>
-            `[Document ${i + 1} - Relevance: ${(doc.score * 100).toFixed(1)}%]\n${doc.text}`
+          documentContext = `\n\nRelevant Company Documents:\n${relevantDocs.map((doc, i) =>
+            `[Document ${i + 1}] ${doc.title}:\n${doc.content}`
           ).join('\n\n')}`;
-        }
-      } catch (error) {
-        console.error('Pinecone query error:', error);
-        if (companyDocuments.length > 0) {
+        } else if (companyDocuments.length <= 5) {
           documentContext = `\n\nCompany Documents:\n${companyDocuments.map(doc =>
             `${doc.title}:\n${doc.content}`
           ).join('\n\n')}`;
@@ -330,37 +331,18 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
   async function handleDocumentUpload() {
     if (!documentTitle.trim() || !documentContent.trim()) return;
     try {
-      const docId = `${companyId}_${Date.now()}`;
-
       await addCompanyDocument({
         companyId,
         title: documentTitle.trim(),
         content: documentContent.trim(),
-        uploadedBy: 'current-user',
+        uploadedBy: currentUser?.email || 'unknown',
         createdAt: new Date()
       });
-
-      try {
-        await upsertDocuments(companyId, [
-          {
-            id: docId,
-            text: `${documentTitle.trim()}\n\n${documentContent.trim()}`,
-            metadata: {
-              title: documentTitle.trim(),
-              uploadedBy: 'current-user',
-              uploadedAt: new Date().toISOString()
-            }
-          }
-        ]);
-        console.log('Document indexed to Pinecone successfully');
-      } catch (pineconeError) {
-        console.error('Failed to index to Pinecone:', pineconeError);
-      }
 
       setDocumentTitle('');
       setDocumentContent('');
       setShowDocumentUpload(false);
-      alert('Document added and indexed successfully');
+      alert('Document added successfully');
     } catch (error) {
       console.error('Failed to upload document:', error);
       alert('Failed to upload document');
@@ -395,7 +377,7 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
           </div>
         </div>
 
-        <div className="flex-shrink-0 overflow-hidden" style={{ maxHeight: '28vh' }}>
+        <div className="flex-shrink-0 overflow-hidden">
           <TranscriptView
             messages={messages}
             onPlayMessage={handlePlayMessage}
