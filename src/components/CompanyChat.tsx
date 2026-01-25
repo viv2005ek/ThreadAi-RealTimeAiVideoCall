@@ -47,6 +47,7 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
   const [inviteEmail, setInviteEmail] = useState('');
   const [documentTitle, setDocumentTitle] = useState('');
   const [documentContent, setDocumentContent] = useState('');
+  const [rawPdfContent, setRawPdfContent] = useState('');
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
   const [transcriptHeight, setTranscriptHeight] = useState(300);
@@ -339,6 +340,29 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
     }
   }
 
+  function formatPdfContentForDisplay(rawText: string): string {
+    // Clean up and format the text for better readability
+    let formatted = rawText
+      .replace(/\s+/g, ' ')
+      .replace(/\n\s*\n/g, '\n\n')
+      .trim();
+
+    const sentences = formatted.split(/(?<=[.!?])\s+/);
+    const paragraphs: string[] = [];
+    let currentParagraph: string[] = [];
+
+    sentences.forEach((sentence, index) => {
+      currentParagraph.push(sentence);
+
+      if (currentParagraph.length >= 4 || index === sentences.length - 1) {
+        paragraphs.push(currentParagraph.join(' '));
+        currentParagraph = [];
+      }
+    });
+
+    return paragraphs.join('\n\n');
+  }
+
   async function handlePdfUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -358,13 +382,15 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
 
     try {
       const extractedText = await extractTextFromPDF(file);
-      setDocumentContent(extractedText);
+      setRawPdfContent(extractedText);
+      const formattedText = formatPdfContentForDisplay(extractedText);
+      setDocumentContent(formattedText);
       setDocumentTitle(file.name.replace('.pdf', ''));
-      alert('PDF processed successfully! Review the content before uploading.');
     } catch (error) {
       console.error('Failed to process PDF:', error);
       alert('Failed to process PDF file');
       setPdfFile(null);
+      setRawPdfContent('');
     } finally {
       setIsProcessingPdf(false);
     }
@@ -375,6 +401,7 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
     try {
       const docId = `${companyId}_${Date.now()}`;
 
+      // Use formatted content for Firestore display
       await addCompanyDocument({
         companyId,
         title: documentTitle.trim(),
@@ -383,15 +410,19 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
         createdAt: new Date()
       });
 
+      // Use raw PDF content for RAG if available, otherwise use the display content
+      const contentForRag = rawPdfContent || documentContent.trim();
+
       try {
         await upsertDocuments(companyId, [
           {
             id: docId,
-            text: `${documentTitle.trim()}\n\n${documentContent.trim()}`,
+            text: `${documentTitle.trim()}\n\n${contentForRag}`,
             metadata: {
               title: documentTitle.trim(),
               uploadedBy: 'current-user',
-              uploadedAt: new Date().toISOString()
+              uploadedAt: new Date().toISOString(),
+              source: rawPdfContent ? 'pdf' : 'manual'
             }
           }
         ]);
@@ -402,6 +433,7 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
 
       setDocumentTitle('');
       setDocumentContent('');
+      setRawPdfContent('');
       setPdfFile(null);
       setShowDocumentUpload(false);
       alert('Document added and indexed successfully');
@@ -549,12 +581,24 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
 
       {showDocumentUpload && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-scale-in">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowDocumentUpload(false)} />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => {
+            setShowDocumentUpload(false);
+            setPdfFile(null);
+            setRawPdfContent('');
+            setDocumentTitle('');
+            setDocumentContent('');
+          }} />
           <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 sm:p-8 animate-slide-up max-h-[90vh] overflow-y-auto scrollbar-thin">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-gray-900">Add Company Data</h3>
               <button
-                onClick={() => setShowDocumentUpload(false)}
+                onClick={() => {
+                  setShowDocumentUpload(false);
+                  setPdfFile(null);
+                  setRawPdfContent('');
+                  setDocumentTitle('');
+                  setDocumentContent('');
+                }}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
                 <X className="w-5 h-5 text-gray-500" />
@@ -577,10 +621,15 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
                     </div>
                   )}
                 </div>
-                {pdfFile && (
-                  <p className="text-xs text-green-600 mt-2">PDF loaded: {pdfFile.name}</p>
+                {pdfFile && !isProcessingPdf && (
+                  <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-xs text-green-700 font-medium">✓ PDF loaded: {pdfFile.name}</p>
+                    <p className="text-xs text-green-600 mt-1">Content extracted and ready to upload. You can edit the text below if needed.</p>
+                  </div>
                 )}
-                <p className="text-xs text-gray-500 mt-1">Or manually enter document details below</p>
+                {!pdfFile && (
+                  <p className="text-xs text-gray-500 mt-1">Or manually enter document details below</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Document Title</label>
@@ -593,7 +642,10 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Content</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Content
+                  {pdfFile && <span className="text-xs text-gray-500 ml-2">(Formatted for readability - raw PDF data will be used for RAG)</span>}
+                </label>
                 <textarea
                   value={documentContent}
                   onChange={(e) => setDocumentContent(e.target.value)}
