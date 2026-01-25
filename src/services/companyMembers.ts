@@ -40,7 +40,11 @@ export function subscribeToCompanyMembers(
       ...doc.data(),
       created_at: doc.data().created_at?.toDate() || new Date()
     })) as CompanyMember[];
+    console.log(`Fetched ${members.length} members for company ${companyId}:`, members);
     callback(members);
+  }, (error) => {
+    console.error('Error subscribing to company members:', error);
+    callback([]);
   });
 }
 
@@ -54,6 +58,8 @@ export async function addCompanyMemberToFirestore(
     const memberId = `${companyId}_${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
     const memberRef = doc(db, 'company_members', memberId);
 
+    console.log(`Adding member ${email} (${role}) to company ${companyId} with ID ${memberId}`);
+
     await setDoc(memberRef, {
       company_id: companyId,
       email: email,
@@ -61,6 +67,8 @@ export async function addCompanyMemberToFirestore(
       added_by: addedBy,
       created_at: Timestamp.now()
     });
+
+    console.log(`Successfully added member ${email} to company ${companyId}`);
   } catch (error) {
     console.error('Error adding company member:', error);
     throw error;

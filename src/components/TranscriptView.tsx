@@ -57,18 +57,15 @@ export default function TranscriptView({ messages, onPlayMessage, transcriptHeig
   }
 
   function increaseHeight() {
-    if (transcriptHeight < 70) {
-      onHeightChange(Math.min(transcriptHeight + 10, 70));
-    }
+    onHeightChange(Math.min(transcriptHeight + 50, 600));
   }
 
   function decreaseHeight() {
-    if (transcriptHeight > 20) {
-      onHeightChange(Math.max(transcriptHeight - 10, 20));
-    }
+    onHeightChange(Math.max(transcriptHeight - 50, 200));
   }
 
-  function handleMouseDown() {
+  function handleMouseDown(e: React.MouseEvent) {
+    e.preventDefault();
     setIsDragging(true);
   }
 
@@ -76,22 +73,26 @@ export default function TranscriptView({ messages, onPlayMessage, transcriptHeig
     if (!isDragging) return;
 
     function handleMouseMove(e: MouseEvent) {
-      const containerHeight = window.innerHeight;
+      const windowHeight = window.innerHeight;
       const mouseY = e.clientY;
-      const newHeight = Math.round(((containerHeight - mouseY) / containerHeight) * 100);
-      onHeightChange(Math.max(20, Math.min(70, newHeight)));
+      const newHeight = Math.round(windowHeight - mouseY - 100);
+      onHeightChange(Math.max(200, Math.min(600, newHeight)));
     }
 
     function handleMouseUp() {
       setIsDragging(false);
     }
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
     };
   }, [isDragging, onHeightChange]);
 
@@ -102,10 +103,10 @@ export default function TranscriptView({ messages, onPlayMessage, transcriptHeig
     : messages;
 
   return (
-    <div className="px-6" style={{ height: `${transcriptHeight}%`, minHeight: '200px' }}>
+    <div className="px-6 flex flex-col" style={{ height: `${transcriptHeight}px`, minHeight: '200px', maxHeight: '600px' }}>
       <div className="max-w-2xl mx-auto h-full flex flex-col">
         <div
-          className="flex items-center justify-center py-1 cursor-ns-resize hover:bg-gray-200 rounded-t-lg transition-colors"
+          className="flex items-center justify-center py-1 cursor-ns-resize hover:bg-gray-200 rounded-t-lg transition-colors select-none"
           onMouseDown={handleMouseDown}
         >
           <GripHorizontal className="w-5 h-5 text-gray-400" />

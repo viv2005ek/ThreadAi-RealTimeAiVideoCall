@@ -46,7 +46,7 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
   const [inviteEmail, setInviteEmail] = useState('');
   const [documentTitle, setDocumentTitle] = useState('');
   const [documentContent, setDocumentContent] = useState('');
-  const [transcriptHeight, setTranscriptHeight] = useState(40);
+  const [transcriptHeight, setTranscriptHeight] = useState(300);
 
   useEffect(() => {
     stopSpeaking();
@@ -382,29 +382,31 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
       />
 
       <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-        <div className="flex-shrink-0 p-2 sm:p-3 overflow-hidden">
-          <div className="max-w-full md:max-w-xl mx-auto">
-            <VideoPlayer
-              state={videoState}
-              avatarImageUrl={settings.avatarPreviewImageUrl}
-              speakingVideoUrl={currentVideoUrl}
-              speakingVideoUrls={gooeyResponse?.videoUrls}
-              caption={currentCaption}
-              onVideoEnded={handleVideoEnded}
+        <div className="flex-1 flex flex-col overflow-y-auto min-h-0">
+          <div className="flex-shrink-0 p-2 sm:p-3">
+            <div className="max-w-full md:max-w-xl mx-auto">
+              <VideoPlayer
+                state={videoState}
+                avatarImageUrl={settings.avatarPreviewImageUrl}
+                speakingVideoUrl={currentVideoUrl}
+                speakingVideoUrls={gooeyResponse?.videoUrls}
+                caption={currentCaption}
+                onVideoEnded={handleVideoEnded}
+              />
+            </div>
+          </div>
+
+          <div className="flex-shrink-0">
+            <TranscriptView
+              messages={messages}
+              onPlayMessage={handlePlayMessage}
+              transcriptHeight={transcriptHeight}
+              onHeightChange={setTranscriptHeight}
             />
           </div>
         </div>
 
-        <div className="flex-shrink-0 overflow-hidden" style={{ maxHeight: '28vh' }}>
-          <TranscriptView
-            messages={messages}
-            onPlayMessage={handlePlayMessage}
-            transcriptHeight={transcriptHeight}
-            onHeightChange={setTranscriptHeight}
-          />
-        </div>
-
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 z-10 bg-white border-t border-gray-200">
           <MessageInput
             input={input}
             onInputChange={setInput}
