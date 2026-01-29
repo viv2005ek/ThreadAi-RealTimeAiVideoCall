@@ -1,4 +1,4 @@
-import { Play } from 'lucide-react';
+import { Play, Eye } from 'lucide-react';
 import { Message } from '../types';
 
 interface MessageBubbleProps {
@@ -8,6 +8,7 @@ interface MessageBubbleProps {
 
 export default function MessageBubble({ message, onPlay }: MessageBubbleProps) {
   const hasMedia = message.sender === 'ai' && (message.videoUrl || (message.videoUrls && message.videoUrls.length > 0));
+  const hasVisionContext = message.visionContext;
 
   function handlePlay() {
     if (onPlay && hasMedia) {
@@ -36,7 +37,28 @@ export default function MessageBubble({ message, onPlay }: MessageBubbleProps) {
               : 'bg-gray-100 text-gray-900 rounded-bl-md'
           }`}
         >
-          <p className="text-sm leading-relaxed">{message.text}</p>
+          <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
+
+          {hasVisionContext && message.visionContext && (
+            <div className="mt-2 pt-2 border-t border-gray-300">
+              <div className="flex items-center gap-1 mb-1">
+                <Eye className="w-3 h-3 text-blue-600" />
+                <span className="text-xs font-medium text-blue-600">Vision Context</span>
+              </div>
+              <p className="text-xs text-gray-600">
+                {message.visionContext.objects.length > 0
+                  ? `Detected: ${message.visionContext.objects.map(obj => obj.class).join(', ')}`
+                  : 'No objects detected'
+                }
+              </p>
+              {message.visionContext.text && (
+                <p className="text-xs text-gray-600 mt-1">
+                  Text: "{message.visionContext.text}"
+                </p>
+              )}
+            </div>
+          )}
+
           <p className={`text-xs mt-1 ${
             message.sender === 'user' ? 'text-gray-400' : 'text-gray-500'
           }`}>

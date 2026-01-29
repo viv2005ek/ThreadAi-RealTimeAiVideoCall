@@ -76,6 +76,7 @@ export default function VirtualEyesChat({ conversationId }: VirtualEyesChatProps
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
+        await videoRef.current.play();
         setIsCameraActive(true);
       }
     } catch (error) {
@@ -248,9 +249,9 @@ export default function VirtualEyesChat({ conversationId }: VirtualEyesChatProps
       )}
 
       <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col border-r border-gray-200">
           <div className="flex-1 overflow-y-auto p-6">
-            <div className="max-w-4xl mx-auto space-y-4">
+            <div className="max-w-3xl mx-auto space-y-4">
               {messages.length === 0 && (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -269,80 +270,50 @@ export default function VirtualEyesChat({ conversationId }: VirtualEyesChatProps
             </div>
           </div>
 
-          <MessageInput
-            input={input}
-            onInputChange={setInput}
-            onSend={handleSendMessage}
-            onKeyDown={handleKeyDown}
-            isBusy={videoState === 'speaking' || videoState === 'thinking'}
-            isListening={false}
-            onToggleListening={() => {}}
-            speechError={null}
-            attachments={[]}
-            onAttachmentSelect={() => {}}
-            onRemoveAttachment={() => {}}
-            isProcessingAttachments={isProcessingVision}
-          />
+          <div className="border-t border-gray-200">
+            <MessageInput
+              input={input}
+              onInputChange={setInput}
+              onSend={handleSendMessage}
+              onKeyDown={handleKeyDown}
+              isBusy={videoState === 'speaking' || videoState === 'thinking'}
+              isListening={false}
+              onToggleListening={() => {}}
+              speechError={null}
+              attachments={[]}
+              onAttachmentSelect={() => {}}
+              onRemoveAttachment={() => {}}
+              isProcessingAttachments={isProcessingVision}
+            />
+          </div>
         </div>
 
-        <div className="w-96 border-l border-gray-200 bg-white flex flex-col">
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                <Camera className="w-4 h-4" />
-                Camera View
-              </h3>
-              <button
-                onClick={isCameraActive ? stopCamera : startCamera}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  isCameraActive
-                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                }`}
-              >
-                {isCameraActive ? (
-                  <>
-                    <CameraOff className="w-4 h-4 inline mr-1" />
-                    Stop
-                  </>
-                ) : (
-                  <>
-                    <Camera className="w-4 h-4 inline mr-1" />
-                    Start
-                  </>
-                )}
-              </button>
-            </div>
+        <div className="w-[500px] bg-gray-50 flex flex-col relative">
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 className="font-semibold text-gray-900">AI Assistant</h3>
+            <button
+              onClick={isCameraActive ? stopCamera : startCamera}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                isCameraActive
+                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+              }`}
+            >
+              {isCameraActive ? (
+                <>
+                  <CameraOff className="w-4 h-4" />
+                  <span>Stop Camera</span>
+                </>
+              ) : (
+                <>
+                  <Camera className="w-4 h-4" />
+                  <span>Start Camera</span>
+                </>
+              )}
+            </button>
           </div>
 
-          <div className="flex-1 flex flex-col items-center justify-center p-4 bg-gray-900">
-            {isCameraActive ? (
-              <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover"
-                />
-                {isProcessingVision && (
-                  <div className="absolute inset-0 bg-blue-600/20 flex items-center justify-center">
-                    <div className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium">
-                      Processing...
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center text-gray-400">
-                <CameraOff className="w-12 h-12 mx-auto mb-2" />
-                <p className="text-sm">Camera is off</p>
-              </div>
-            )}
-            <canvas ref={canvasRef} className="hidden" />
-          </div>
-
-          <div className="p-4 bg-gray-50">
+          <div className="flex-1 flex items-center justify-center p-6">
             <VideoPlayer
               state={videoState}
               avatarImageUrl={settings.avatarPreviewImageUrl}
@@ -352,6 +323,34 @@ export default function VirtualEyesChat({ conversationId }: VirtualEyesChatProps
               onVideoEnded={handleVideoEnd}
             />
           </div>
+
+          {isCameraActive && (
+            <div className="absolute bottom-6 right-6 w-48 h-36 bg-black rounded-lg overflow-hidden shadow-2xl border-2 border-white z-10">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover"
+                style={{ transform: 'scaleX(-1)' }}
+              />
+              {isProcessingVision && (
+                <div className="absolute inset-0 bg-blue-600/40 flex items-center justify-center">
+                  <div className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium">
+                    Processing...
+                  </div>
+                </div>
+              )}
+              <div className="absolute top-2 left-2">
+                <div className="flex items-center gap-1 px-2 py-1 bg-black/60 rounded text-xs text-white">
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                  <span>You</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <canvas ref={canvasRef} className="hidden" />
         </div>
       </div>
     </div>
