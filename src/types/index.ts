@@ -63,6 +63,7 @@ export interface VisionContext {
   objects: Array<{ class: string; score: number; bbox: number[] }>;
   text: string;
   description: string;
+  detailedAnalysis?: string;
 }
 
 // ==========================

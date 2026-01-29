@@ -32,6 +32,7 @@ export default function VirtualEyesChat({ conversationId }: VirtualEyesChatProps
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isProcessingVision, setIsProcessingVision] = useState(false);
   const [visionContextHistory, setVisionContextHistory] = useState<VisionContext[]>([]);
+  const [currentDetections, setCurrentDetections] = useState<Array<{ class: string; score: number; bbox: number[] }>>([]);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -67,6 +68,52 @@ export default function VirtualEyesChat({ conversationId }: VirtualEyesChatProps
       stopCamera();
     };
   }, []);
+
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout | null = null;
+
+    if (isCameraActive && videoRef.current && !isProcessingVision) {
+      console.log('👁️ [LIVE VISION] Starting continuous object detection (every 2 seconds)...');
+
+      intervalId = setInterval(async () => {
+        if (!isProcessingVision && videoRef.current && isCameraActive) {
+          console.log('👁️ [LIVE VISION] Updating detections...');
+
+          if (!videoRef.current || !canvasRef.current) return;
+
+          const canvas = canvasRef.current;
+          const video = videoRef.current;
+
+          if (video.videoWidth === 0 || video.videoHeight === 0) return;
+
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
+
+          ctx.save();
+          ctx.scale(-1, 1);
+          ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+          ctx.restore();
+
+          try {
+            const visionContext = await processVisionSnapshot(canvas);
+            setCurrentDetections(visionContext.objects);
+          } catch (error) {
+            console.error('❌ [LIVE VISION] Error updating detections:', error);
+          }
+        }
+      }, 2000);
+    }
+
+    return () => {
+      if (intervalId) {
+        console.log('👁️ [LIVE VISION] Stopping continuous object detection');
+        clearInterval(intervalId);
+      }
+    };
+  }, [isCameraActive, isProcessingVision]);
 
   useEffect(() => {
     console.log('📹 [CAMERA STATE] isCameraActive changed to:', isCameraActive);
@@ -152,7 +199,8 @@ export default function VirtualEyesChat({ conversationId }: VirtualEyesChatProps
       console.log('🛑 [STOP CAMERA] Clearing video srcObject...');
       videoRef.current.srcObject = null;
     }
-    console.log('🛑 [STOP CAMERA] Setting isCameraActive to false');
+    console.log('🛑 [STOP CAMERA] Clearing detections and setting isCameraActive to false');
+    setCurrentDetections([]);
     setIsCameraActive(false);
   }
 
@@ -179,16 +227,24 @@ export default function VirtualEyesChat({ conversationId }: VirtualEyesChatProps
       return null;
     }
 
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    console.log('Captured frame from video:', canvas.width, 'x', canvas.height);
+    console.log('🎨 [CANVAS] Capturing frame with UN-MIRRORED image for processing...');
+    ctx.save();
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+    ctx.restore();
+    console.log('🎨 [CANVAS] Frame captured:', canvas.width, 'x', canvas.height);
 
     setIsProcessingVision(true);
     try {
       const visionContext = await processVisionSnapshot(canvas);
-      console.log('Vision processing complete:', visionContext);
+      console.log('✅ [VISION] Processing complete');
+
+      setCurrentDetections(visionContext.objects);
+      console.log('🎯 [DETECTIONS] Stored', visionContext.objects.length, 'objects for bounding box display');
+
       return visionContext;
     } catch (error) {
-      console.error('Failed to process vision:', error);
+      console.error('❌ [VISION] Failed to process:', error);
       return null;
     } finally {
       setIsProcessingVision(false);
@@ -229,21 +285,34 @@ export default function VirtualEyesChat({ conversationId }: VirtualEyesChatProps
         console.log('No vision context captured');
       }
 
-      const systemPrompt = contextWindow
-        ? `IMPORTANT: You are an AI assistant with LIVE CAMERA ACCESS. You can SEE through the camera in real-time.
+      let detailedVisionData = '';
+      if (visionContext && visionContext.detailedAnalysis) {
+        detailedVisionData = visionContext.detailedAnalysis;
+      }
 
-WHAT YOU CAN SEE RIGHT NOW (from camera):
+      const systemPrompt = contextWindow
+        ? `IMPORTANT: You are an AI assistant with LIVE CAMERA ACCESS powered by TensorFlow COCO-SSD for object detection and Tesseract OCR for text recognition. You can SEE and ANALYZE the user's surroundings in real-time.
+
+DETAILED VISION ANALYSIS (Current Frame):
+${detailedVisionData}
+
+RECENT VISION HISTORY:
 ${contextWindow}
 
 USER'S QUESTION: "${userMessage}"
 
 INSTRUCTIONS:
-- Answer the user's question based on what you SEE in the camera feed
-- If they ask "what's in my hand", describe the objects you detected that are close/foreground
-- Be specific about what objects were detected and their positions
-- If you see objects, describe them confidently
-- If no objects were detected, say so honestly
-- Always reference the visual information when answering`
+- Answer based on the DETAILED VISION ANALYSIS above, which includes:
+  * Detected objects with confidence scores
+  * Bounding box positions and sizes
+  * Depth ordering (foreground/background)
+  * Spatial positions (left/center/right)
+  * Any visible text extracted via OCR
+- Be specific about object types, positions, and confidence levels
+- If asked about "what's in my hand", focus on foreground objects (very close/close depth)
+- Reference the actual detection data in your response
+- If no objects detected, state this clearly
+- Always ground your answers in the vision data provided`
         : userMessage;
 
       console.log('Sending prompt to AI with vision context:', contextWindow ? 'YES' : 'NO');
@@ -445,35 +514,98 @@ INSTRUCTIONS:
             return isCameraActive && (
               <div className="absolute bottom-6 right-6 w-64 h-48 bg-black rounded-lg overflow-hidden shadow-2xl border-4 border-green-500 z-10">
                 {console.log('🖼️ [RENDER] Camera preview div is rendering!')}
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover"
-                  style={{ transform: 'scaleX(-1)' }}
-                  onLoadStart={() => console.log('🖼️ [VIDEO] onLoadStart event')}
-                  onLoadedData={() => console.log('🖼️ [VIDEO] onLoadedData event')}
-                  onPlay={() => console.log('🖼️ [VIDEO] onPlay event')}
-                  onCanPlay={() => console.log('🖼️ [VIDEO] onCanPlay event')}
-                />
-                {isProcessingVision && (
-                  <div className="absolute inset-0 bg-blue-600/50 flex items-center justify-center backdrop-blur-sm">
-                    <div className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2">
-                      <Eye className="w-4 h-4 animate-pulse" />
-                      <span>Analyzing Vision...</span>
+                <div className="relative w-full h-full">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover"
+                    style={{ transform: 'scaleX(-1)' }}
+                    onLoadStart={() => console.log('🖼️ [VIDEO] onLoadStart event')}
+                    onLoadedData={() => console.log('🖼️ [VIDEO] onLoadedData event')}
+                    onPlay={() => console.log('🖼️ [VIDEO] onPlay event')}
+                    onCanPlay={() => console.log('🖼️ [VIDEO] onCanPlay event')}
+                  />
+
+                  {currentDetections.length > 0 && videoRef.current && (
+                    <svg
+                      className="absolute inset-0 w-full h-full pointer-events-none"
+                      style={{ transform: 'scaleX(-1)' }}
+                      viewBox={`0 0 ${videoRef.current.videoWidth || 1280} ${videoRef.current.videoHeight || 720}`}
+                      preserveAspectRatio="none"
+                    >
+                      {currentDetections.map((obj, idx) => {
+                        const [x, y, width, height] = obj.bbox;
+                        const confidence = Math.round(obj.score * 100);
+
+                        let color = '#22c55e';
+                        const area = width * height;
+                        if (area > 50000) color = '#ef4444';
+                        else if (area > 30000) color = '#f59e0b';
+                        else if (area > 10000) color = '#3b82f6';
+
+                        return (
+                          <g key={idx}>
+                            <rect
+                              x={x}
+                              y={y}
+                              width={width}
+                              height={height}
+                              fill="none"
+                              stroke={color}
+                              strokeWidth="3"
+                              strokeDasharray="5,5"
+                            />
+                            <rect
+                              x={x}
+                              y={y - 22}
+                              width={Math.max(obj.class.length * 8 + 35, 80)}
+                              height="22"
+                              fill={color}
+                              opacity="0.9"
+                            />
+                            <text
+                              x={x + 4}
+                              y={y - 6}
+                              fill="white"
+                              fontSize="12"
+                              fontWeight="bold"
+                              fontFamily="monospace"
+                            >
+                              {obj.class} {confidence}%
+                            </text>
+                          </g>
+                        );
+                      })}
+                    </svg>
+                  )}
+
+                  {isProcessingVision && (
+                    <div className="absolute inset-0 bg-blue-600/50 flex items-center justify-center backdrop-blur-sm">
+                      <div className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2">
+                        <Eye className="w-4 h-4 animate-pulse" />
+                        <span>Analyzing Vision...</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="absolute top-2 left-2">
+                    <div className="flex items-center gap-1 px-2 py-1 bg-black/80 rounded text-xs text-white font-medium">
+                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                      <span>Your Camera (Live)</span>
                     </div>
                   </div>
-                )}
-                <div className="absolute top-2 left-2">
-                  <div className="flex items-center gap-1 px-2 py-1 bg-black/80 rounded text-xs text-white font-medium">
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                    <span>Your Camera (Live)</span>
-                  </div>
-                </div>
-                <div className="absolute bottom-2 left-2">
-                  <div className="px-2 py-1 bg-green-600/90 rounded text-xs text-white font-medium">
-                    AI Vision Active
+
+                  <div className="absolute bottom-2 left-2 flex flex-col gap-1">
+                    <div className="px-2 py-1 bg-green-600/90 rounded text-xs text-white font-medium">
+                      AI Vision Active
+                    </div>
+                    {currentDetections.length > 0 && (
+                      <div className="px-2 py-1 bg-blue-600/90 rounded text-xs text-white font-medium">
+                        {currentDetections.length} object{currentDetections.length !== 1 ? 's' : ''} detected
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
