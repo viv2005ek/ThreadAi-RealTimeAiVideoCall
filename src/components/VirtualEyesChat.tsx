@@ -227,8 +227,8 @@ export default function VirtualEyesChat({ conversationId }: VirtualEyesChatProps
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-50">
       <ChatHeader
-        onOpenSettings={() => setShowSettings(true)}
-        description={settings.description}
+        settings={settings}
+        onSettingsClick={() => setShowSettings(true)}
       />
 
       {showSettings && (
