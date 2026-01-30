@@ -57,7 +57,7 @@ export default function Signup() {
             </motion.div>
             <div className="absolute inset-0 bg-cyan-400 rounded-full blur-lg opacity-50"></div>
           </div>
-          <span className="text-xl font-bold heading-font bg-gradient-to-r from-cyan-400 to-blue-400 text-gradient">
+          <span className="text-xl font-bold techno-font bg-gradient-to-r from-cyan-400 to-blue-400 text-gradient">
             Thread.ai
           </span>
         </Link>

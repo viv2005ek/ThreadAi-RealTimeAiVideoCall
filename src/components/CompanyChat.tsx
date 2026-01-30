@@ -449,7 +449,7 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
   const isBusy = videoState === 'thinking' || videoState === 'speaking';
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-gradient-to-br from-gray-50 via-white to-gray-50 overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-slate-900 overflow-hidden relative z-10">
       <ChatHeader
         settings={settings}
         onSettingsClick={() => setShowSettings(true)}
@@ -484,7 +484,7 @@ export default function CompanyChat({ companyId }: CompanyChatProps) {
           </div>
         </div>
 
-        <div className="flex-shrink-0 z-10 bg-white border-t border-gray-200">
+        <div className="flex-shrink-0 z-10 glass-darker border-t border-cyan-500/20">
           <MessageInput
             input={input}
             onInputChange={setInput}

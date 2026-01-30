@@ -391,7 +391,7 @@ INSTRUCTIONS:
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="flex-1 flex flex-col overflow-hidden bg-slate-900 relative z-10">
       <ChatHeader
         settings={settings}
         onSettingsClick={() => setShowSettings(true)}
@@ -407,28 +407,28 @@ INSTRUCTIONS:
       )}
 
       <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 flex flex-col border-r border-gray-200">
-          <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 flex flex-col border-r border-cyan-500/20">
+          <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
             <div className="max-w-3xl mx-auto space-y-4">
               {messages.length === 0 && (
                 <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Eye className="w-8 h-8 text-blue-600" />
+                  <div className="w-16 h-16 bg-gradient-to-br from-violet-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse-glow border border-violet-500/30">
+                    <Eye className="w-8 h-8 text-violet-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Virtual Eyes Mode</h3>
-                  <p className="text-gray-600 mb-4">AI can see and understand your surroundings through the camera</p>
+                  <h3 className="text-xl font-semibold text-white mb-2 heading-font">Virtual Eyes Mode</h3>
+                  <p className="text-slate-400 mb-4">AI can see and understand your surroundings through the camera</p>
 
                   {(() => {
                     console.log('💬 [EMPTY STATE] Rendering status message - isCameraActive:', isCameraActive);
                     return !isCameraActive ? (
-                      <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg max-w-md mx-auto">
-                        <p className="text-sm text-amber-800 font-medium mb-2">📷 Camera is currently off</p>
-                        <p className="text-xs text-amber-700">Click "Start Camera" in the top right to enable AI vision</p>
+                      <div className="mt-6 p-4 glass-effect border border-amber-500/30 rounded-lg max-w-md mx-auto">
+                        <p className="text-sm text-amber-400 font-medium mb-2">📷 Camera is currently off</p>
+                        <p className="text-xs text-amber-300/80">Click "Start Camera" in the top right to enable AI vision</p>
                       </div>
                     ) : (
-                      <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg max-w-md mx-auto">
-                        <p className="text-sm text-green-800 font-medium mb-2">✅ Camera Active</p>
-                        <p className="text-xs text-green-700">AI can now see what's in front of your camera. Ask me anything!</p>
+                      <div className="mt-6 p-4 glass-effect border border-cyan-500/30 rounded-lg max-w-md mx-auto">
+                        <p className="text-sm text-cyan-400 font-medium mb-2">✅ Camera Active</p>
+                        <p className="text-xs text-cyan-300/80">AI can now see what's in front of your camera. Ask me anything!</p>
                       </div>
                     );
                   })()}
@@ -443,7 +443,7 @@ INSTRUCTIONS:
             </div>
           </div>
 
-          <div className="border-t border-gray-200">
+          <div className="border-t border-cyan-500/20 glass-darker">
             <MessageInput
               input={input}
               onInputChange={setInput}
@@ -461,11 +461,11 @@ INSTRUCTIONS:
           </div>
         </div>
 
-        <div className="w-[500px] bg-gray-50 flex flex-col relative">
-          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="w-[500px] glass-darker flex flex-col relative border-l border-cyan-500/20">
+          <div className="p-4 border-b border-cyan-500/20 flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-gray-900">AI Assistant</h3>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <h3 className="font-semibold text-white heading-font">AI Assistant</h3>
+              <p className="text-xs text-slate-400 mt-0.5">
                 Camera: {isCameraActive ? '🟢 Active' : '🔴 Inactive'}
               </p>
             </div>
@@ -478,10 +478,10 @@ INSTRUCTIONS:
                   startCamera();
                 }
               }}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
                 isCameraActive
-                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                  ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white hover:shadow-lg hover:shadow-red-500/50'
+                  : 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:neon-glow'
               }`}
             >
               {isCameraActive ? (

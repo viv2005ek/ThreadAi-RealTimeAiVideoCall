@@ -39,7 +39,7 @@ const techStack = [
 export default function Landing() {
   return (
     <div className="min-h-screen bg-slate-950 text-white relative overflow-hidden">
-      <AnimatedBackground />
+      <AnimatedBackground showFloatingObjects={true} />
 
       <nav className="fixed top-0 left-0 right-0 z-50 glass-darker backdrop-blur-md border-b border-blue-500/20">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -57,7 +57,7 @@ export default function Landing() {
               </motion.div>
               <div className="absolute inset-0 bg-cyan-400 rounded-full blur-lg opacity-50 animate-pulse"></div>
             </div>
-            <span className="text-2xl font-bold heading-font bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-400 text-gradient tracking-wider">
+            <span className="text-2xl font-bold techno-font bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-400 text-gradient tracking-wider">
               Thread.ai
             </span>
           </motion.div>
@@ -83,20 +83,28 @@ export default function Landing() {
             transition={{ duration: 0.8 }}
             className="mb-6"
           >
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 leading-tight heading-font">
-              <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-violet-400 text-gradient neon-text">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 leading-tight">
+              <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-violet-400 text-gradient neon-text techno-font">
                 Thread.ai
               </span>
               <br />
-              <span className="text-3xl md:text-5xl text-slate-300">
+              <span className="text-3xl md:text-5xl text-slate-300 heading-font">
                 Real-Time AI Conversations, Reimagined
               </span>
             </h1>
+            <motion.p
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="text-lg md:text-xl text-cyan-400/80 font-light italic tracking-wide"
+            >
+              Beyond chat, Towards Presence
+            </motion.p>
           </motion.div>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
             className="text-xl md:text-2xl text-slate-400 mb-10 max-w-3xl mx-auto leading-relaxed"
           >
             Talk to AI like a real person. Video, voice, documents, vision — all in one thread.
@@ -104,7 +112,7 @@ export default function Landing() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
             <Link
@@ -249,7 +257,7 @@ export default function Landing() {
                 <MessageCircle className="w-10 h-10 text-cyan-400" />
                 <div className="absolute inset-0 bg-cyan-400 rounded-full blur-xl opacity-50"></div>
               </div>
-              <span className="text-3xl font-bold heading-font bg-gradient-to-r from-cyan-400 to-blue-400 text-gradient">
+              <span className="text-3xl font-bold techno-font bg-gradient-to-r from-cyan-400 to-blue-400 text-gradient">
                 Thread.ai
               </span>
             </div>

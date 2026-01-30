@@ -101,7 +101,7 @@ export default function Sidebar({
             </motion.div>
             <div className="absolute inset-0 bg-cyan-400 rounded-full blur-md opacity-50"></div>
           </div>
-          <span className="text-lg font-bold heading-font bg-gradient-to-r from-cyan-400 to-blue-400 text-gradient">
+          <span className="text-lg font-bold techno-font bg-gradient-to-r from-cyan-400 to-blue-400 text-gradient">
             Thread.ai
           </span>
         </motion.div>
