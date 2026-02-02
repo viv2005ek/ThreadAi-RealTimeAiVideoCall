@@ -52,6 +52,18 @@ export interface Conversation {
   title: string;
   createdAt: Date;
   settings?: ConversationSettings;
+  type?: 'normal' | 'virtual-eyes';
+}
+
+// ==========================
+// VISION CONTEXT
+// ==========================
+export interface VisionContext {
+  timestamp: Date;
+  objects: Array<{ class: string; score: number; bbox: number[] }>;
+  text: string;
+  description: string;
+  detailedAnalysis?: string;
 }
 
 // ==========================
@@ -62,7 +74,31 @@ export interface Message {
   conversationId: string;
   sender: 'user' | 'ai';
   text: string;
-  videoUrls?: string[] | null; // Add this field
+  transcript?: string;
+  videoUrl?: string | null;
+  videoUrls?: string[] | null;
+  createdAt: Date;
+  visionContext?: VisionContext;
+}
+
+// ==========================
+// COMPANY
+// ==========================
+export interface Company {
+  id?: string;
+  name: string;
+  createdBy: string;
+  createdAt: Date;
+  members: string[];
+  settings?: ConversationSettings;
+}
+
+export interface CompanyDocument {
+  id?: string;
+  companyId: string;
+  title: string;
+  content: string;
+  uploadedBy: string;
   createdAt: Date;
 }
 
@@ -295,13 +331,13 @@ export const DEFAULT_CONVERSATION_SETTINGS: ConversationSettings = {
   personality: 'A helpful and knowledgeable AI assistant',
   tone: 'Professional',
   responseLength: 'Normal',
-  avatarVoiceGender: 'female',
+  avatarVoiceGender: 'male',
   language: 'en',
   avatarId: 'default-ai',
   selectedGeminiModel: 'gemini-2.5-flash',
 
   avatarMediaUrl:
-    'https://storage.googleapis.com/dara-c1b52.appspot.com/daras_ai/media/26fddf96-3931-11ef-bb1d-02420a000107/1080pexport.mov',
+    'https://cdn.jsdelivr.net/gh/viv2005ek/fantu-avatars@master/movs/GeneralMov.mov',
   avatarPreviewImageUrl:
-    'https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg'
+    'https://cdn.jsdelivr.net/gh/viv2005ek/fantu-avatars@master/images/General.png'
 };

@@ -7,4 +7,15 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  define: {
+    'global': 'globalThis',
+  },
+  build: {
+    rollupOptions: {
+      external: [/^node:/]
+    }
+  },
+  worker: {
+    format: 'es'
+  }
 });

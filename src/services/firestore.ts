@@ -10,12 +10,23 @@ import {
   orderBy,
   Timestamp,
   deleteDoc,
-  onSnapshot
+  onSnapshot,
+  arrayUnion
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Conversation, Message, ConversationSettings, DEFAULT_CONVERSATION_SETTINGS } from '../types';
+import { Conversation, Message, ConversationSettings, DEFAULT_CONVERSATION_SETTINGS, Company, CompanyDocument } from '../types';
 
-
+export async function createConversation(userId: string, title: string, type: 'normal' | 'virtual-eyes' = 'normal'): Promise<string> {
+  const conversationsRef = collection(db, 'conversations');
+  const docRef = await addDoc(conversationsRef, {
+    userId,
+    title,
+    createdAt: Timestamp.now(),
+    settings: DEFAULT_CONVERSATION_SETTINGS,
+    type
+  });
+  return docRef.id;
+}
 
 export function subscribeToUserConversations(
   userId: string,
@@ -34,7 +45,8 @@ export function subscribeToUserConversations(
       userId: doc.data().userId,
       title: doc.data().title,
       createdAt: doc.data().createdAt.toDate(),
-      settings: doc.data().settings || DEFAULT_CONVERSATION_SETTINGS
+      settings: doc.data().settings || DEFAULT_CONVERSATION_SETTINGS,
+      type: doc.data().type || 'normal'
     }));
     callback(conversations);
   });
@@ -54,7 +66,8 @@ export async function getConversation(conversationId: string): Promise<Conversat
     userId: data.userId,
     title: data.title,
     createdAt: data.createdAt.toDate(),
-    settings: data.settings || DEFAULT_CONVERSATION_SETTINGS
+    settings: data.settings || DEFAULT_CONVERSATION_SETTINGS,
+    type: data.type || 'normal'
   };
 }
 
@@ -76,11 +89,17 @@ export function subscribeToConversation(
       userId: data.userId,
       title: data.title,
       createdAt: data.createdAt.toDate(),
-      settings: data.settings || DEFAULT_CONVERSATION_SETTINGS
+      settings: data.settings || DEFAULT_CONVERSATION_SETTINGS,
+      type: data.type || 'normal'
     });
   });
 }
 
+
+export async function updateConversationTitle(conversationId: string, newTitle: string): Promise<void> {
+  const docRef = doc(db, 'conversations', conversationId);
+  await updateDoc(docRef, { title: newTitle });
+}
 
 export async function deleteConversation(conversationId: string): Promise<void> {
   const messagesRef = collection(db, 'messages');
@@ -96,23 +115,31 @@ export async function deleteConversation(conversationId: string): Promise<void> 
 // Update addMessage function
 export async function addMessage(message: Omit<Message, 'id'>): Promise<string> {
   const messagesRef = collection(db, 'messages');
-  
-  console.log('📝 Saving message to Firestore:', {
-    text: message.text.substring(0, 50) + '...',
-    videoUrls: message.videoUrls,
-    sender: message.sender,
-    videoUrlsCount: message.videoUrls?.length || 0
-  });
-  
-  const docRef = await addDoc(messagesRef, {
+
+  const messageData: any = {
     conversationId: message.conversationId,
     sender: message.sender,
     text: message.text,
-    videoUrls: message.videoUrls || null, // Store as array or null
     createdAt: Timestamp.now()
-  });
-  
-  console.log('✅ Message saved with ID:', docRef.id);
+  };
+
+  if (message.transcript !== undefined) {
+    messageData.transcript = message.transcript;
+  }
+
+  if (message.videoUrl !== undefined && message.videoUrl !== null) {
+    messageData.videoUrl = message.videoUrl;
+  }
+
+  if (message.videoUrls !== undefined && message.videoUrls !== null) {
+    messageData.videoUrls = message.videoUrls;
+  }
+
+  if (message.visionContext !== undefined) {
+    messageData.visionContext = message.visionContext;
+  }
+
+  const docRef = await addDoc(messagesRef, messageData);
   return docRef.id;
 }
 
@@ -131,36 +158,153 @@ export function subscribeToMessages(
   return onSnapshot(q, (snapshot) => {
     const messages = snapshot.docs.map(doc => {
       const data = doc.data();
-      
-      // Handle both old and new data formats
-      let videoUrls: string[] | null = null;
-      
-      if (Array.isArray(data.videoUrls)) {
-        videoUrls = data.videoUrls;
-      } else if (data.videoUrl) {
-        // Convert single videoUrl to array for consistency
-        videoUrls = [data.videoUrl];
-      } else if (data.videoUrls && !Array.isArray(data.videoUrls)) {
-        // Handle case where videoUrls exists but isn't an array
-        videoUrls = [data.videoUrls];
-      }
-      
       return {
         id: doc.id,
         conversationId: data.conversationId,
         sender: data.sender,
         text: data.text,
-        videoUrls: videoUrls,
-        createdAt: data.createdAt.toDate()
+        transcript: data.transcript,
+        videoUrl: data.videoUrl,
+        videoUrls: data.videoUrls,
+        createdAt: data.createdAt.toDate(),
+        visionContext: data.visionContext ? {
+          ...data.visionContext,
+          timestamp: data.visionContext.timestamp?.toDate ? data.visionContext.timestamp.toDate() : new Date(data.visionContext.timestamp)
+        } : undefined
       };
     });
-    
-    console.log('📥 Messages loaded from Firestore:', {
-      count: messages.length,
-      hasVideoUrls: messages.filter(m => m.videoUrls && m.videoUrls.length > 0).length
-    });
-    
     callback(messages);
+  });
+}
+
+export async function createCompany(userEmail: string, name: string): Promise<string> {
+  const companiesRef = collection(db, 'companies');
+  const docRef = await addDoc(companiesRef, {
+    name,
+    createdBy: userEmail,
+    createdAt: Timestamp.now(),
+    members: [userEmail],
+    settings: DEFAULT_CONVERSATION_SETTINGS
+  });
+  return docRef.id;
+}
+
+export function subscribeToUserCompanies(
+  userEmailOrId: string,
+  callback: (companies: Company[]) => void
+): () => void {
+  const companiesRef = collection(db, 'companies');
+  const q = query(
+    companiesRef,
+    where('members', 'array-contains', userEmailOrId)
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const companies = snapshot.docs.map(doc => ({
+      id: doc.id,
+      name: doc.data().name,
+      createdBy: doc.data().createdBy,
+      createdAt: doc.data().createdAt.toDate(),
+      members: doc.data().members,
+      settings: doc.data().settings || DEFAULT_CONVERSATION_SETTINGS
+    })).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    callback(companies);
+  });
+}
+
+export async function addCompanyMember(companyId: string, memberEmail: string): Promise<void> {
+  const companyRef = doc(db, 'companies', companyId);
+  await updateDoc(companyRef, {
+    members: arrayUnion(memberEmail)
+  });
+}
+
+export async function updateCompanySettings(
+  companyId: string,
+  settings: ConversationSettings
+): Promise<void> {
+  const companyRef = doc(db, 'companies', companyId);
+  await updateDoc(companyRef, { settings });
+}
+
+export async function updateCompanyName(companyId: string, newName: string): Promise<void> {
+  const companyRef = doc(db, 'companies', companyId);
+  await updateDoc(companyRef, { name: newName });
+}
+
+export async function addCompanyDocument(document: Omit<CompanyDocument, 'id'>): Promise<string> {
+  const documentsRef = collection(db, 'company_documents');
+  const docRef = await addDoc(documentsRef, {
+    ...document,
+    createdAt: Timestamp.now()
+  });
+  return docRef.id;
+}
+
+export function subscribeToCompanyDocuments(
+  companyId: string,
+  callback: (documents: CompanyDocument[]) => void
+): () => void {
+  const documentsRef = collection(db, 'company_documents');
+  const q = query(
+    documentsRef,
+    where('companyId', '==', companyId),
+    orderBy('createdAt', 'desc')
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const documents = snapshot.docs.map(doc => ({
+      id: doc.id,
+      companyId: doc.data().companyId,
+      title: doc.data().title,
+      content: doc.data().content,
+      uploadedBy: doc.data().uploadedBy,
+      createdAt: doc.data().createdAt.toDate()
+    }));
+    callback(documents);
+  });
+}
+
+export async function getCompany(companyId: string): Promise<Company | null> {
+  const docRef = doc(db, 'companies', companyId);
+  const docSnap = await getDoc(docRef);
+
+  if (!docSnap.exists()) {
+    return null;
+  }
+
+  const data = docSnap.data();
+  return {
+    id: docSnap.id,
+    name: data.name,
+    createdBy: data.createdBy,
+    createdAt: data.createdAt.toDate(),
+    members: data.members,
+    settings: data.settings || DEFAULT_CONVERSATION_SETTINGS
+  };
+}
+
+export function subscribeToCompany(
+  companyId: string,
+  callback: (company: Company | null) => void
+): () => void {
+  const docRef = doc(db, 'companies', companyId);
+
+  return onSnapshot(docRef, (docSnap) => {
+    if (!docSnap.exists()) {
+      callback(null);
+      return;
+    }
+
+    const data = docSnap.data();
+    callback({
+      id: docSnap.id,
+      name: data.name,
+      createdBy: data.createdBy,
+      createdAt: data.createdAt.toDate(),
+      members: data.members,
+      settings: data.settings || DEFAULT_CONVERSATION_SETTINGS
+    });
   });
 }
 

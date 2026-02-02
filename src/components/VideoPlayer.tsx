@@ -266,7 +266,7 @@ export default function VideoPlayer({
             {/* Main video player */}
             <video
               ref={mainVideoRef}
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-contain"
               playsInline
               muted={false}
               onEnded={handleVideoEnded}
