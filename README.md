@@ -257,7 +257,7 @@ Educational / Research Use Only.
 ## 👨‍💻 Author
 
 Vivek Kumar Garg  
-AI Systems Builder | Full-Stack Developer  
+AI Systems Builder | Full-Stack Developer  | GenAI 
 Portfolio: https://vivekfolio-six.vercel.app/
 
 ---
