@@ -1,5 +1,7 @@
 #ThreadAi-RealTimeAiVideoCall-Rag-gooey-Genai-CV
 
+ThreadAI Presentation:https://drive.google.com/file/d/1j74qSU0fiax_Je0gJxyRurgjA-CeSZgP/view?usp=sharing
+
 # Thread.ai  
 ### Real-Time Multimodal AI Chat with RAG, Vision & AI Video Avatar
 
