@@ -2,6 +2,8 @@
 
 ThreadAI Presentation:https://drive.google.com/file/d/1j74qSU0fiax_Je0gJxyRurgjA-CeSZgP/view?usp=sharing
 
+ThreadAI Document: https://docs.google.com/document/d/1Uqi4W7bhbHs56ksUohuj69Ux1aw64ah1xIvUzm2ykf0/edit?usp=sharing
+
 # Thread.ai  
 ### Real-Time Multimodal AI Chat with RAG, Vision & AI Video Avatar
 
