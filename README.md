@@ -1,7 +1,7 @@
 # Thread.ai
-### Real-Time Multimodal Face-to-Face Video AI Calling Platform
+### Real-Time Multimodal Face-to-Face AI Video Interaction Platform
 
-An interactive AI platform enabling real-time, face-to-face video calls with an AI agent. The platform combines visual understanding, document comprehension, and semantic knowledge retrieval with a digital human avatar that speaks and responds in sync, simulating a natural face-to-face conversation.
+An interactive AI platform enabling real-time, face-to-face video calls with an AI agent. The platform combines visual understanding, document comprehension, and semantic knowledge retrieval with an AI video interaction agent that speaks and responds in sync, simulating a natural face-to-face conversation.
 
 [![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)](#)
 [![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)](#)
@@ -22,7 +22,7 @@ An interactive AI platform enabling real-time, face-to-face video calls with an 
 | **Technical Documentation** | [Google Docs Project Report](https://docs.google.com/document/d/1Uqi4W7bhbHs56ksUohuj69Ux1aw64ah1xIvUzm2ykf0/edit?usp=sharing) |
 | **GitHub Source Code** | [github.com/viv2005ek/ThreadAi-RealTimeAiVideoCall](https://github.com/viv2005ek/ThreadAi-RealTimeAiVideoCall) |
 
-**Project Award Recognition:** First Position - AI Track (National Project Expo). Awarded for excellence in multimodal model orchestration, client-side browser performance engineering, and conversational lip-synchronization pipeline design.
+**Project Award Recognition:** First Position - AI Track (National Project Expo). Awarded for excellence in multimodal model orchestration, client-side browser performance engineering, and conversational face-to-face video calling pipeline design.
 
 ---
 
@@ -32,11 +32,11 @@ An interactive AI platform enabling real-time, face-to-face video calls with an 
 
 ## Overview
 
-Thread.ai is a unified, real-time multimodal AI calling platform designed to coordinate diverse intelligence subsystems into a single, high-fidelity user experience. The core design thesis of the platform centers on the **Real-Time Video AI Call**—shifting away from static text-based prompts to create an active, face-to-face video conferencing window with a digital human avatar.
+Thread.ai is a unified, real-time multimodal AI calling platform designed to coordinate diverse intelligence subsystems into a single, high-fidelity user experience. The core design thesis of the platform centers on the **Real-Time Video AI Call**—shifting away from static text-based prompts to create an active, face-to-face video conferencing window with an AI video interaction agent.
 
-In this layout, the AI agent is visually present directly in front of the user's eyes, simulating a live video call. The agent listens to spoken inputs, analyzes uploaded documents, processes visual assets (such as screenshots or real-time camera feeds), and responds dynamically with synthesized speech matched to realistic facial lip-sync animations.
+In this layout, the AI agent is visually present directly in front of the user's eyes, simulating a live video call. The agent listens to spoken inputs, analyzes uploaded documents, processes visual assets (such as screenshots or real-time camera feeds), and responds dynamically with synthesized speech matched to realistic facial expressions and video responses.
 
-To make this execution pipeline possible, the system acts as a central coordinator. It integrates client-side edge models (local computer vision via TensorFlow.js and Optical Character Recognition via Tesseract.js) with remote cloud engines (Pinecone for vector retrieval, Cloud Firestore for history persistence, and Gooey.ai for lipsync video rendering). Offloading initial analysis directly to the browser minimizes backend latency and reduces server computing requirements.
+To make this execution pipeline possible, the system acts as a central coordinator. It integrates client-side edge models (local computer vision via TensorFlow.js and Optical Character Recognition via Tesseract.js) with remote cloud engines (Pinecone for vector retrieval, Cloud Firestore for history persistence, and Gooey.ai for real-time video call response rendering). Offloading initial analysis directly to the browser minimizes backend latency and reduces server computing requirements.
 
 By synchronizing these separate inputs and models into a single conversational session, Thread.ai shows how multimodal models can work together in a low-latency environment. It establishes a pattern for face-to-face human-computer interaction, bridging the gap between isolated single-purpose AI tools and a unified communication interface.
 
@@ -74,7 +74,7 @@ Thread.ai unifies these systems into a single interface. Instead of using separa
 | System Capability | Traditional Chatbot | Thread.ai Face-to-Face Platform |
 | :--- | :---: | :---: |
 | **Conversational Text Interface** | ✓ Yes | ✓ Yes |
-| **Interactive Video Avatar (Lip-Sync)**| ✗ No | ✓ Yes (Real-time video stream) |
+| **AI Video Interaction Agent** | ✗ No | ✓ Yes (Real-time video call stream) |
 | **Edge Computer Vision (Object Detection)** | ✗ No | ✓ Yes (Local COCO-SSD) |
 | **Optical Character Recognition (OCR)** | ✗ No | ✓ Yes (Local Tesseract.js) |
 | **Client-Side PDF Text Ingestion** | ✗ No | ✓ Yes (Local pdf.js parsing) |
@@ -94,7 +94,7 @@ Thread.ai includes the following core technical capabilities:
 * **Client-Side PDF Ingestion:** Uses `pdfjs-dist` to parse PDFs in the browser, extracting text segments for vector embedding generation without sending raw files to external servers.
 * **Optical Character Recognition (OCR) Engine:** Integrates `Tesseract.js` in a browser worker thread to extract text from images, diagrams, or screenshots locally.
 * **Local Computer Vision (COCO-SSD):** Runs TensorFlow.js with the COCO-SSD model to identify objects in real-time camera captures, adding visual context directly into the AI's prompts.
-* **AI Video Synthesis Pipeline:** Coordinates an Express backend server and the Gooey.ai API to generate synchronized TTS audio and lip-synced video files from text responses.
+* **AI Video Synthesis Pipeline:** Coordinates an Express backend server and the Gooey.ai API to generate synchronized TTS audio and real-time video responses from text responses.
 * **Firebase Authentication:** Handles secure user signup, sign-in, and session tokens, keeping user sessions isolated.
 * **Persistent Session Storage:** Uses Cloud Firestore to save, retrieve, and delete historical conversation sessions, ensuring state persists across page reloads.
 * **Agent Persona Engine:** Supports switching between customized avatar personalities (such as corporate support agents or virtual tutors), adjusting system instructions and voice settings.
@@ -133,7 +133,7 @@ graph TD
     
     %% Avatar Synthesis
     M --> N[Express Backend Proxy]
-    N --> O[Gooey.ai LipSync API]
+    N --> O[Gooey.ai Video Call API]
     O --> P[TTS Audio & Video Rendering]
     P --> Q([Interactive Talking Avatar Video Player])
     Q --> User([User Visual Loop])
@@ -149,7 +149,7 @@ graph TD
 4. **Vector Retrieval:** The extracted text chunks are converted to vector embeddings and queried against Pinecone to retrieve relevant background information.
 5. **Context Assembly:** Aggregates user text, session history, detected objects, OCR text, and vector database matches into a structured system prompt.
 6. **Response Generation:** The LLM processes the prompt and generates a structured text response.
-7. **Video Lip-Sync Synthesis:** The backend proxy receives the text response and calls Gooey.ai to synthesize TTS audio and render a lip-synced video matching the agent's avatar profile.
+7. **AI Video Call Response Synthesis:** The backend proxy receives the text response and calls Gooey.ai to synthesize speech audio and render an interactive talking video matching the agent's profile.
 8. **Visual Playback:** The resulting video streams to the custom `VideoPlayer` component, updating the chat transcript when playback completes.
 
 ---
@@ -181,7 +181,7 @@ graph LR
     end
 
     subgraph Avatar [Avatar Layer: Gooey.ai]
-        Gooey[Gooey.ai LipSync API]
+        Gooey[Gooey.ai Video Call API]
     end
 
     %% Client Connections
@@ -204,7 +204,7 @@ graph LR
 * **Knowledge Layer:** Queries the Pinecone vector index to retrieve relevant text segments for grounding responses.
 * **Backend Proxy (Node.js + Express):** Acts as an API gateway, securing the Gooey.ai API key and proxying video generation requests.
 * **Storage & Auth Layer (Firebase):** Manages user sign-up/login sessions and stores conversation histories in Cloud Firestore.
-* **Avatar Generation Pipeline:** Synthesizes voice audio from text and renders a lip-synced video using target avatar images.
+* **Avatar Generation Pipeline:** Synthesizes voice audio from text and renders a conversational video response using target avatar images.
 
 ---
 
@@ -221,8 +221,8 @@ graph LR
 * **Trade-Off:** Firebase is a proprietary platform, which makes it harder to migrate to other systems. However, this trade-off was acceptable to speed up development and focus on the AI orchestration pipeline.
 
 ### 3. Gooey.ai for the Avatar Pipeline
-* **Decision:** Integrated Gooey.ai for TTS and LipSync rendering.
-* **Rationale:** Gooey.ai combines text-to-speech generation and lip-synchronization into a single API endpoint. This simplifies development compared to maintaining separate models like Wav2Lip.
+* **Decision:** Integrated Gooey.ai for synchronized speech and video call rendering.
+* **Rationale:** Gooey.ai combines text-to-speech generation and conversational video rendering into a single API endpoint. This simplifies development compared to maintaining separate models like Wav2Lip.
 * **Trade-Off:** Cloud-rendered video synthesis is resource-heavy, introducing a 3 to 5-second latency before video playback starts. This is managed in the UI with loading skeletons and real-time text transcript previews.
 
 ### 4. Client-Side Tesseract.js & TensorFlow.js (COCO-SSD)
@@ -245,7 +245,7 @@ graph LR
 ## Technical Challenges & Solutions
 
 ### 1. Latency Compounding in the Multimodal Pipeline
-* **Challenge:** Chaining text generation, text-to-speech, and video lipsync into a sequential pipeline created a long delay before the user received a response.
+* **Challenge:** Chaining text generation, text-to-speech, and AI video generation into a sequential pipeline created a long delay before the user received a response.
 * **Solution:** Implemented **async pre-generation** and **split-rendering**. When the LLM outputs text, the UI displays it immediately in a chat bubble, while the backend processes the TTS and video sync in the background. The avatar video plays once ready, ensuring the system feels responsive.
 
 ### 2. Video Queue and Stream Preloading in React
@@ -283,7 +283,7 @@ graph LR
 ### Backend Infrastructure
 * **Node.js** - Runtime environment for the API server.
 * **Express** - Minimalist API router and request proxy.
-* **Gooey.ai LipSync** - Cloud-based video rendering and TTS alignment.
+* **Gooey.ai Video Call API** - Cloud-based real-time video rendering and TTS alignment.
 
 ### Database, Storage & Auth
 * **Pinecone DB** - Managed vector database for semantic retrieval.
@@ -350,7 +350,7 @@ ThreadAi-RealTimeAiVideoCall/
 │   │   ├── companyMembers.ts   # Definition profiles for custom avatar assistants
 │   │   ├── firestore.ts        # Database utilities (saving, retrieving, deleting history)
 │   │   ├── gooey.ts            # Client interface for the Gooey API
-│   │   ├── lipsync.ts          # State definitions for talking video models
+│   │   ├── lipsync.ts          # State definitions for video interaction models
 │   │   ├── mockAI.ts           # Local backup fallback reasoning models
 │   │   ├── pdfParser.ts        # Wrapper for extraction using pdfjs-dist
 │   │   ├── pinecone.ts         # Query engine for Pinecone vector searches
@@ -471,15 +471,15 @@ The vision system allows the AI to see and read images uploaded by the user:
 * **Object Detection (COCO-SSD):** When an image is uploaded or captured via webcam, TensorFlow.js scans the image locally and identifies objects, adding them to the prompt context (e.g., "The image contains a laptop and a mug").
 * **Optical Character Recognition (Tesseract.js):** Tesseract scans the image for written text, extracts it, and appends it to the prompt context. This enables the AI to answer questions about text in screenshots, receipts, or diagrams.
 
-### AI Video Avatar Pipeline
+### AI Video Interaction Pipeline
 The avatar pipeline turns text responses into talking video animations:
 1. **Text Synthesis:** The LLM generates a text response.
-2. **Backend Proxy request:** The frontend sends the text to the backend proxy.
-3. **TTS and Lip-Sync API:** The backend calls Gooey.ai, which synthesizes speech audio and animates the avatar's lips using lip-synchronization models.
+2. **Backend Proxy Request:** The frontend sends the text to the backend proxy.
+3. **AI Video Interaction API:** The backend calls Gooey.ai, which synthesizes speech audio and animates the avatar's face using real-time video calling models.
 4. **Video Stream:** The API returns a video file URL, which the frontend plays inside the custom video component.
 
 ```
-[Text Response] ──> (Express Proxy) ──> (Gooey.ai TTS) ──> (LipSync Model) ──> [Rendered Video URL]
+[Text Response] ──> (Express Proxy) ──> (Gooey.ai TTS) ──> (Video Call Model) ──> [Rendered Video URL]
                                                                                        │
 [Video Playback] <───────────────── (Custom Video Player) <────────────────────────────┘
 ```
@@ -534,7 +534,7 @@ To scale Thread.ai for production workloads, the architecture can be updated wit
 * **Production Deployment:** Transition the backend service to run inside Docker containers.
 
 ### Long-Term Goals (Next 3-4 Quarters)
-* **CRM Integration for Personalized Support calls:** Connect the face-to-face video calling system with Customer Relationship Management (CRM) databases (e.g., Salesforce, HubSpot). This allows the AI agent to recall user history, account details, and past preferences during the call, creating a personalized experience.
+* **CRM Integration for Personalized Support Calls:** Connect the face-to-face video calling system with Customer Relationship Management (CRM) databases (e.g., Salesforce, HubSpot). This allows the AI agent to recall user history, account details, and past preferences during the call, creating a personalized experience.
 * **Face-to-Face Virtual Classrooms:** Implement live video tutoring sessions where the AI tutor can track student engagement, analyze student handwriting/diagrams through the camera feed, and explain concepts interactively.
 * **Long-Term Memory:** Implement hierarchical database storage to remember user preferences across different sessions.
 * **Multi-Agent Collaboration:** Create a team of specialized AI agents that can pass tasks to one another.
@@ -548,7 +548,7 @@ To scale Thread.ai for production workloads, the architecture can be updated wit
 
 * **AI Systems are Orchestration Challenges:** Building modern AI applications is less about training models and more about coordinating them. Managing data flow across local browser models and cloud APIs is key to a smooth user experience.
 * **Retrieval Quality Matters More than Model Size:** Having clean, relevant context from a vector database (RAG) often improves answer quality more than simply using a larger, more expensive language model.
-* **Latency Compounds Across Pipelines:** When chaining multiple API calls together (LLM -> TTS -> Lipsync), latency quickly adds up. Designing asynchronous UI elements and loading states is crucial.
+* **Latency Compounds Across Pipelines:** When chaining multiple API calls together (LLM -> TTS -> Video Generation), latency quickly adds up. Designing asynchronous UI elements and loading states is crucial.
 * **Prompt Engineering Alone is Insufficient:** Relying solely on prompt formatting is not enough for complex applications. A robust system requires clean input data, vector search grounding, and error-handling fallbacks.
 * **UX is Determined by Infrastructure:** Fast database queries and efficient client-side code are what make an application feel responsive, highlighting the importance of system design.
 
