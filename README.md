@@ -1,5 +1,5 @@
 # Thread.ai
-### Real-Time Multimodal Face-to-Face AI Video Interaction Platform
+### Real-Time Multimodal Face-to-Face AI Video Calling & Interaction Platform
 
 An interactive AI platform enabling real-time, face-to-face video calls with an AI agent. The platform combines visual understanding, document comprehension, and semantic knowledge retrieval with an AI video interaction agent that speaks and responds in sync, simulating a natural face-to-face conversation.
 
@@ -32,7 +32,7 @@ An interactive AI platform enabling real-time, face-to-face video calls with an 
 
 ## Overview
 
-Thread.ai is a unified, real-time multimodal AI calling platform designed to coordinate diverse intelligence subsystems into a single, high-fidelity user experience. The core design thesis of the platform centers on the **Real-Time Video AI Call**—shifting away from static text-based prompts to create an active, face-to-face video conferencing window with an AI video interaction agent.
+Thread.ai is a unified, real-time multimodal AI calling platform designed to coordinate diverse intelligence subsystems into a single, high-fidelity user experience. The core design thesis of the platform centers on the **Real-Time Video AI Call**—shifting away from static text-based prompts to create an active, face-to-face video conferencing window with a digital human avatar.
 
 In this layout, the AI agent is visually present directly in front of the user's eyes, simulating a live video call. The agent listens to spoken inputs, analyzes uploaded documents, processes visual assets (such as screenshots or real-time camera feeds), and responds dynamically with synthesized speech matched to realistic facial expressions and video responses.
 
@@ -133,7 +133,7 @@ graph TD
     
     %% Avatar Synthesis
     M --> N[Express Backend Proxy]
-    N --> O[Gooey.ai Video Call API]
+    N --> O[Gooey.ai LipSync API]
     O --> P[TTS Audio & Video Rendering]
     P --> Q([Interactive Talking Avatar Video Player])
     Q --> User([User Visual Loop])
@@ -181,7 +181,7 @@ graph LR
     end
 
     subgraph Avatar [Avatar Layer: Gooey.ai]
-        Gooey[Gooey.ai Video Call API]
+        Gooey[Gooey.ai LipSync API]
     end
 
     %% Client Connections
@@ -222,7 +222,7 @@ graph LR
 
 ### 3. Gooey.ai for the Avatar Pipeline
 * **Decision:** Integrated Gooey.ai for synchronized speech and video call rendering.
-* **Rationale:** Gooey.ai combines text-to-speech generation and conversational video rendering into a single API endpoint. This simplifies development compared to maintaining separate models like Wav2Lip.
+* **Rationale:** Gooey.ai combines text-to-speech generation and conversational video rendering into its API. This simplifies development compared to maintaining separate models like Wav2Lip.
 * **Trade-Off:** Cloud-rendered video synthesis is resource-heavy, introducing a 3 to 5-second latency before video playback starts. This is managed in the UI with loading skeletons and real-time text transcript previews.
 
 ### 4. Client-Side Tesseract.js & TensorFlow.js (COCO-SSD)
@@ -283,7 +283,7 @@ graph LR
 ### Backend Infrastructure
 * **Node.js** - Runtime environment for the API server.
 * **Express** - Minimalist API router and request proxy.
-* **Gooey.ai Video Call API** - Cloud-based real-time video rendering and TTS alignment.
+* **Gooey.ai LipSync API** - Cloud-based real-time video rendering and TTS alignment.
 
 ### Database, Storage & Auth
 * **Pinecone DB** - Managed vector database for semantic retrieval.
@@ -471,17 +471,17 @@ The vision system allows the AI to see and read images uploaded by the user:
 * **Object Detection (COCO-SSD):** When an image is uploaded or captured via webcam, TensorFlow.js scans the image locally and identifies objects, adding them to the prompt context (e.g., "The image contains a laptop and a mug").
 * **Optical Character Recognition (Tesseract.js):** Tesseract scans the image for written text, extracts it, and appends it to the prompt context. This enables the AI to answer questions about text in screenshots, receipts, or diagrams.
 
-### AI Video Interaction Pipeline
+### AI Video Call Response Pipeline
 The avatar pipeline turns text responses into talking video animations:
 1. **Text Synthesis:** The LLM generates a text response.
 2. **Backend Proxy Request:** The frontend sends the text to the backend proxy.
-3. **AI Video Interaction API:** The backend calls Gooey.ai, which synthesizes speech audio and animates the avatar's face using real-time video calling models.
+3. **AI Video Interaction API:** The backend calls the Gooey.ai LipSync API, which synthesizes speech audio and animates the avatar's face using real-time video calling models.
 4. **Video Stream:** The API returns a video file URL, which the frontend plays inside the custom video component.
 
 ```
-[Text Response] ──> (Express Proxy) ──> (Gooey.ai TTS) ──> (Video Call Model) ──> [Rendered Video URL]
-                                                                                       │
-[Video Playback] <───────────────── (Custom Video Player) <────────────────────────────┘
+[Text Response] ──> (Express Proxy) ──> (Gooey.ai TTS) ──> (Gooey.ai LipSync API) ──> [Rendered Video URL]
+                                                                                            │
+[Video Playback] <───────────────── (Custom Video Player) <─────────────────────────────────┘
 ```
 
 ---
