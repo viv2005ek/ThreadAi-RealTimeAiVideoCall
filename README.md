@@ -22,7 +22,7 @@ An interactive AI platform enabling real-time, face-to-face video calls with an 
 | **Technical Documentation** | [Google Docs Project Report](https://docs.google.com/document/d/1Uqi4W7bhbHs56ksUohuj69Ux1aw64ah1xIvUzm2ykf0/edit?usp=sharing) |
 | **GitHub Source Code** | [github.com/viv2005ek/ThreadAi-RealTimeAiVideoCall](https://github.com/viv2005ek/ThreadAi-RealTimeAiVideoCall) |
 
-**Project Award Recognition:** First Position - AI Track (National Project Expo). Awarded for excellence in multimodal model orchestration, client-side browser performance engineering, and conversational face-to-face video calling pipeline design.
+**Project Recognition:** First Position – AI Track (National Project Expo), Top-9 Global Finalist at NextGenHacks, and Finalist at the AMD Slingshot AI Innovation Challenge. Recognized for innovations in multimodal model orchestration, client-side browser performance engineering, and conversational face-to-face video calling pipeline design.
 
 ---
 
